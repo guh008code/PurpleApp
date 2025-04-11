@@ -9,7 +9,7 @@ export const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems:"center"
     },
-    title:{
+    titleButton:{
         fontSize:16,
         fontWeight:"bold",
         color:"#FFF"

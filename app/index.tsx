@@ -34,29 +34,41 @@ export default function Index(){
         fetch(`${urlApi}/Acesso/Login/${email}/${senha}`)
         .then(res => {
             console.log(res.status);
-            console.log(res.headers);
+            //console.log(res.headers);
             return res.json();
         })
         .then((result) =>{
             console.log(result);
 
             if(result.status){
-                setData(result)
-                AsyncStorage.setItem(`TOKEN`, result.dados.acessToken)
-                AsyncStorage.setItem(`IDUSER`, result.dados.idLogado)
-                AsyncStorage.setItem(`NOME`, result.dados.nome)
-                AsyncStorage.setItem(`INSTALACAO`, result.dados.instalacao)
-                AsyncStorage.setItem(`IDEMPRESA`, result.dados.idEmpresa)
-                AsyncStorage.setItem(`EMPRESA`, result.dados.empresa)
-                AsyncStorage.setItem(`email`, result.dados.email)
 
-                console.log(result.dados.nome)
-                console.log(result.dados.email)
-                console.log(result.dados.instalacao)
-                console.log(result.dados.empresa)
-                console.log(result.status)
+                if(result.dados.idEmpresa == ''){
+                    Alert.alert(`Usuário sem permissão para acesso!`)
+                }
+                else
+                {
+
+                //setData(result)
+                AsyncStorage.setItem(`acessToken`, result.dados.acessToken)
+                AsyncStorage.setItem(`idUser`, result.dados.idUser)
+                AsyncStorage.setItem(`idPerfil`, result.dados.idPerfil)
+                AsyncStorage.setItem(`nome`, result.dados.nome)
+                AsyncStorage.setItem(`instalacao`, `${result.dados.instalacao}`)
+                AsyncStorage.setItem(`empresa`, result.dados.idEmpresa)
+                AsyncStorage.setItem(`email`, result.dados.email)
+                console.log('-----token login -----')
+
                 //console.log(result.dados.acessToken)
+
+                //console.log(result.dados.nome)
+                //console.log(result.dados.email)
+                //console.log(result.dados.instalacao)
+                //console.log(result.dados.idEmpresa)
+                //console.log(result.status)
+                //console.log(result.dados.acessToken)
+
                 router.navigate("/home")
+                }
             }else{
                 Alert.alert(`${result.mensagem}`)
             }

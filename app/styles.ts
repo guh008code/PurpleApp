@@ -24,6 +24,9 @@ export const styles = StyleSheet.create({
         fontWeight: "bold",
         padding:10
     },
+    textMenu:{
+        padding:0
+    },
     textCadastro:{
         padding:10
     },
@@ -53,7 +56,8 @@ export const styles = StyleSheet.create({
     },
     containerMenu:{
         flex:1,
-        padding:32,
+        padding:22,
+        marginBottom:190,
         justifyContent:"center",
         backgroundColor:"#FFFFFF",
         gap:16

@@ -8,14 +8,18 @@ import { styles } from "./styles";
 
 export default function Home(){
 
+
+    const [nomeLogado, setNomeLogado] = useState("")
+    const [email, setEmail] = useState("")
+
     const [empresaLogado, setEmpresaLogado] = useState("")
     const [empresaCnpj, setEmpresaCnpj] = useState("")
-    const nomeLogado = AsyncStorage.getItem('nome');
-    const email = AsyncStorage.getItem('email');
 
-    const instalacao = AsyncStorage.getItem('instalacao');
-    const idEmpresa = AsyncStorage.getItem('empresa');
-    const acessToken = AsyncStorage.getItem('acessToken');
+    const [instalacao, setInstalacao] = useState("")
+    const [idEmpresa, setIdEmpresa] = useState("")
+    const [acessToken, setAcessToken] = useState("")
+
+
     const urlApi = `http://development.eba-bu5ryrmq.us-east-1.elasticbeanstalk.com/Api`
 
     useEffect(() => {
@@ -25,38 +29,66 @@ export default function Home(){
         // Se quiser rodar só uma vez, deixe o array de dependências vazio
       }, []);
     
-      const carregarDados = () => {
-        console.log('---home Token---');
-        console.log(`Bearer ${acessToken._j}`);
+      const carregarDados = async () => {
+        const sessao = await AsyncStorage.getItem(`session`)
+        if(sessao == null){
+            alert(`Sua Sessão caiu...`)
+            router.navigate("..")
+        }
 
-        console.log(`instalacao ${instalacao._j}`);
-        console.log(`idEmpresa ${idEmpresa._j}`);
-        getEmpresa()
-        // Coloque aqui o que você quer executar
+        //console.log('---json parse---');
+        const response = JSON.parse(await AsyncStorage.getItem('session'));
+        //console.log(response)
+        //console.log(response.instalacao);
+
+        const instalacao = response.instalacao
+        const idEmpresa = response.idEmpresa
+        const acessToken = response.acessToken
+
+        setInstalacao(response.instalacao);
+        setNomeLogado(response.nome);
+        setEmail(response.email);
+        setIdEmpresa(response.idEmpresa);
+        setAcessToken(response.acessToken);
+
+        //console.log('---home Token---');
+        //console.log(`Bearer ${acessToken}`);
+  
+        //console.log(`instalacao ${instalacao}`);
+        //console.log(`idEmpresa ${idEmpresa}`);
+
+        const empresa = JSON.parse(await AsyncStorage.getItem(`empresa`));
+        console.log('json empresa');
+        console.log(empresa);
+        if(empresa == null){
+            getEmpresa(idEmpresa, instalacao, acessToken)
+            // Coloque aqui o que você quer executar
+            console.log('buscou dados da empresa na base');
+        }else{
+            const empresaLogado = empresa.epsNomFnt
+            const empresaCnpj = empresa.epsCnpj
+            setEmpresaLogado(empresaLogado)
+            setEmpresaCnpj(empresaCnpj)
+            console.log('buscou dados da empresa na memoria');
+        }
       };
 
-    let sair = () => {
-        AsyncStorage.getAllKeys()
-            .then(keys => AsyncStorage.multiRemove(keys))
-            .then(() => router.navigate(".."))
-            .then(() => console.log(AsyncStorage.getItem('acessToken')._j)
-        );
-    }
-
-    let getEmpresa = () =>{
-        fetch(`${urlApi}/Empresa/BuscarPorID/${idEmpresa._j}/${instalacao._j}`,{
-            headers: {Authorization: `Bearer ${acessToken._j}`}
+    let getEmpresa = (idEmpresa: any, instalacao: any, acessToken: any) =>{
+        fetch(`${urlApi}/Empresa/BuscarPorID/${idEmpresa}/${instalacao}`,{
+            headers: {Authorization: `Bearer ${acessToken}`}
         })
         .then(res => {
             console.log(res.status);
             //console.log(res.headers);
             return res.json();
         })
-        .then((result) =>{
+        .then(async (result) =>{
             console.log(result);
 
             if(result.status){
-
+                await AsyncStorage.setItem(`empresa`, JSON.stringify(result.dados))
+                const empresaLogado = result.dados.epsNomFnt
+                const empresaCnpj = result.dados.epsCnpj
                 setEmpresaLogado(result.dados.epsNomFnt)
                 setEmpresaCnpj(result.dados.epsCnpj)
 
@@ -79,18 +111,27 @@ export default function Home(){
     }
 
     function redirecionaInventario(){      
-        router.navigate("/inventarios")
+        router.navigate("/listaInventarios")
     }
 
     function redirecionaScan(){      
         router.navigate("/scanner")
     }
 
+    let sair = async () => {
+        console.log('Signout - Deslogando')
+        AsyncStorage.getAllKeys()
+            .then(keys => AsyncStorage.multiRemove(keys))
+            .then(async () => await AsyncStorage.removeItem(`session`))
+            .then(() => router.navigate("..")
+        );
+    }
+
 return(
     <View style={styles.containerMenu}>
     <Text style={styles.title}>Purple Manager</Text>
     <Text style={styles.textMenu}> Bem vindo {nomeLogado} - {email} </Text>
-    <Text style={styles.textMenu}>Empresa: {empresaLogado} - CN {empresaCnpj}</Text>
+    <Text style={styles.textMenu}>Empresa: {empresaLogado} - {empresaCnpj}</Text>
         
         <TouchableOpacity onPress={redirecionaInventario}>
             <View style={styles.absoluteView}>

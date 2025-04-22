@@ -37,26 +37,20 @@ export default function Index(){
             //console.log(res.headers);
             return res.json();
         })
-        .then((result) =>{
-            console.log(result);
+        .then(async (result) =>{
+            //console.log(result);
 
             if(result.status){
-
                 if(result.dados.idEmpresa == ''){
                     Alert.alert(`Usuário sem permissão para acesso!`)
                 }
                 else
                 {
-
                 //setData(result)
-                AsyncStorage.setItem(`acessToken`, result.dados.acessToken)
-                AsyncStorage.setItem(`idUser`, result.dados.idUser)
-                AsyncStorage.setItem(`idPerfil`, result.dados.idPerfil)
-                AsyncStorage.setItem(`nome`, result.dados.nome)
-                AsyncStorage.setItem(`instalacao`, `${result.dados.instalacao}`)
-                AsyncStorage.setItem(`empresa`, result.dados.idEmpresa)
-                AsyncStorage.setItem(`email`, result.dados.email)
-                console.log('-----token login -----')
+
+                await AsyncStorage.setItem(`session`, JSON.stringify(result.dados))
+
+                //console.log('-----token login -----')
 
                 //console.log(result.dados.acessToken)
 
@@ -74,7 +68,7 @@ export default function Index(){
             }
         },
         (error) => {
-            console.log(`catch entrou`)
+            console.log(`api erro`)
             console.log(error);
         })
         .finally(() => setLoading(false));
@@ -82,7 +76,6 @@ export default function Index(){
 
     function novaMensagem(){      
         setEmail(email)
-        console.log("alertando")
         Alert.alert(`Bem vindo, ${email}`)
         router.navigate("/home")
   

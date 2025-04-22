@@ -82,5 +82,22 @@ export const styles = StyleSheet.create({
         fontSize:16,
         fontWeight:"bold",
         color:"#FFF"
-    }
+    },
+    row: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderColor: '#ccc',
+        paddingVertical: 8,
+      },
+      header: {
+        backgroundColor: '#eee',
+        borderBottomWidth: 2,
+      },
+      cell: {
+        flex: 1,
+        paddingHorizontal: 8,
+      },
+      headerText: {
+        fontWeight: 'bold',
+      }
 })

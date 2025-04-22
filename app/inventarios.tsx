@@ -1,22 +1,28 @@
 import {TouchableOpacity, View, Text, StyleSheet, Image, ScrollView, StatusBar} from "react-native"
 import { router } from "expo-router"
 import {SafeAreaView, SafeAreaProvider} from 'react-native-safe-area-context';
-
+import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
 import { Button } from "../components/button"
 import { Input } from "../components/input"
 import { Dropdown } from 'react-native-element-dropdown';
-
+import TabelaAPI from '../app/listaInventarios';
 import { styles } from "./styles";
 
-export default function Inventarios(){
+const Inventarios =  ({ route }) => {
+
+      useEffect(() => {
+            // Função que será executada assim que o componente carregar
+            console.log('tela de inventario')
+            console.log(route)
+        
+            // Se quiser rodar só uma vez, deixe o array de dependências vazio
+          }, []);
+
 return(
-
-    <SafeAreaProvider>
-    <SafeAreaView style={styles.containerCadastros} edges={['top']}>
       <ScrollView>
-
+      <View style={styles.containerCadastros}>
       <Text style={styles.title}>Purple Manager</Text>
-
       <Text style={styles.titlePequeno}>Cadastrar Inventário</Text>
             <Text style={styles.textCadastro} >PLAQUETA</Text>
             <Input placeholder={'0000000'} />
@@ -50,12 +56,10 @@ return(
             <Button title="SALVAR"/>
       
       <Button title="Voltar" onPress={() => router.back()} />
+      </View>
       </ScrollView>
-    </SafeAreaView>
-  </SafeAreaProvider>
+ 
+      )
+};
 
-
-    
-)
-    
-}
+export default Inventarios;

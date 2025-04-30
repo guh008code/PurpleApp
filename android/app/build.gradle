@@ -81,6 +81,18 @@ def enableProguardInReleaseBuilds = (findProperty('android.enableProguardInRelea
 def jscFlavor = 'org.webkit:android-jsc:+'
 
 android {
+
+    flavorDimensions "react-native-camera"
+    productFlavors {
+        general {
+        dimension "react-native-camera"
+        }
+        // Ou use mlkit se você quiser esse
+        // mlkit {
+        //   dimension "react-native-camera"
+        // }
+    }
+
     ndkVersion rootProject.ext.ndkVersion
 
     buildToolsVersion rootProject.ext.buildToolsVersion

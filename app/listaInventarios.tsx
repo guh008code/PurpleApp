@@ -1,144 +1,263 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router"
-import { NavigationContainer } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { Button } from "../components/button"
 import { Input } from "../components/input"
 import { styles } from "./styles";
+import Empresas from './empresas';
 
-const API_URL = 'http://development.eba-bu5ryrmq.us-east-1.elasticbeanstalk.com/Api';
+const urlApi = 'https://servicos.opurple.com.br/Api';
 
-const TabelaAPI = ({ navigation }) => {
+const ListaInventarios = () => {
+  const navigation = useNavigation();
+
   const [dados, setDados] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [plaqueta, setPlaqueta] = useState("")
+  const [empresa, setEmpresa] = useState("")
+  const [cnpj, setCnpj] = useState("")
 
   useEffect(() => {
     const buscarDados = async () => {
-      const sessao = await AsyncStorage.getItem(`session`)
-      if(sessao == null){
-          alert(`Sua Sessão caiu...`)
-          router.navigate("..")
-      }
+      let sessao: string | null = await AsyncStorage.getItem(`session`)
+      if (sessao == null) {
+        alert(`Sua Sessão caiu...`)
+        router.navigate("..")
+      } else {
+        try {
+          const response = JSON.parse(sessao);
+          const instalacao = response.instalacao
+          const idEmpresa = response.idEmpresa
+          const acessToken = response.acessToken
 
+          let itemEmpresa: string | null = await AsyncStorage.getItem(`empresa`)
+          if (itemEmpresa == null) {
+            getEmpresa(idEmpresa, instalacao, acessToken)
+            // Coloque aqui o que você quer executar
+          } else {
+            const empresa = JSON.parse(itemEmpresa);
+            const empresaLogado = empresa.epsNomFnt
+            const empresaCnpj = formatarCNPJ(empresa.epsCnpj)
+            setEmpresa(empresaLogado)
+            setCnpj(empresaCnpj)
+          }
 
-      try {
-        const response = JSON.parse(await AsyncStorage.getItem('session'));
-        const instalacao = response.instalacao
-        const idEmpresa = response.idEmpresa
-        const acessToken = response.acessToken
+          getInventarios(idEmpresa, instalacao, acessToken);
 
-        console.log('---lista iventarios---');
-        console.log(`Bearer ${acessToken}`);
-  
-        console.log(`instalacao ${instalacao}`);
-        console.log(`idEmpresa ${idEmpresa}`);
-
-        const resposta = await fetch(`${API_URL}/Inventario/ListarTodos/${idEmpresa}/${instalacao}`,{
-          headers: {Authorization: `Bearer ${acessToken}`}
-      })
-        const json = await resposta.json();
-        console.log(`json chegou`)
-        console.log(json)
-        setDados(json.dados); // limita a 20 registros
-      } catch (erro) {
-        console.error('Erro ao buscar dados da API:', erro);
-      } finally {
-        setCarregando(false);
+        } catch (erro) {
+          console.error('Erro ao buscar dados da API:', erro);
+        } finally {
+          //setCarregando(false);
+        }
       }
     };
 
     buscarDados();
   }, []);
 
-    let buscarPlaqueta = async () => {
-      if(plaqueta == ''){
-        alert('Informe o número da plaqueta.')
-      }else{
-        const response = JSON.parse(await AsyncStorage.getItem('session'));
-        const instalacao = response.instalacao
-        const idEmpresa = response.idEmpresa
-        const acessToken = response.acessToken
-      
-        getPlaqueta(plaqueta, idEmpresa, instalacao, acessToken)
-      }
+  const formatarCNPJ = (cnpj: string) => {
+    return cnpj
+      .replace(/\D/g, '') // Remove tudo que não for número
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2')
+      .slice(0, 18); // Garante o tamanho máximo
+  };
+
+
+  let getInventarios = async (idEmpresa: any, instalacao: any, acessToken: any) => {
+
+    try {
+      const resposta = await fetch(`${urlApi}/Inventario/ListarTodos/${idEmpresa}/${instalacao}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${acessToken}`,
+          'Content-Type': `application/json`
+        }
+      })
+      const json = await resposta.json();
+      //console.log(`json chegou`)
+      //console.log(json)
+      setDados(json.dados); // limita a 20 registros
+    } catch (erro) {
+      console.error('Erro ao buscar dados da API:', erro);
+    } finally {
+      //setCarregando(false);
     }
+  }
 
-    let getPlaqueta = (plaqueta: any, idEmpresa: any, instalacao: any, acessToken: any) =>{
-      fetch(`${API_URL}/Inventario/BuscarPlaqueta/${plaqueta}/${idEmpresa}/${instalacao}`,{
-          headers: {Authorization: `Bearer ${acessToken}`}
-      })
+  let getEmpresa = (idEmpresa: any, instalacao: any, acessToken: any) => {
+    fetch(`${urlApi}/Empresa/BuscarPorID/${idEmpresa}/${instalacao}`, {
+      headers: { Authorization: `Bearer ${acessToken}` }
+    })
       .then(res => {
-          console.log(res.status);
-          //console.log(res.headers);
-          return res.json();
+        console.log(res.status);
+        //console.log(res.headers)
+        return res.json();
       })
-      .then(async (result) =>{
-          console.log(result);
-          console.log(result.status);
-          console.log(result.mensagem);
-          if(result.status){
-            alert(result.mensagem)
-              //const empresaLogado = result.dados.epsNomFnt
-              //const empresaCnpj = result.dados.epsCnpj
+      .then(async (result) => {
+        console.log(result);
 
-          }else{
-              alert(`${result.mensagem}`)
-          }
+        if (result.status) {
+          await AsyncStorage.setItem(`empresa`, JSON.stringify(result.dados))
+          const empresaLogado = result.dados.epsNomFnt
+          const empresaCnpj = formatarCNPJ(result.dados.epsCnpj)
+          setEmpresa(result.dados.epsNomFnt)
+          setCnpj(empresaCnpj)
+
+        } else {
+          alert(`${result.mensagem}`)
+        }
       },
-      (error) => {
+        (error) => {
           console.log(error);
-      })
+        })
       .finally();
   }
 
+  const buscarPlaqueta = async () => {
+    let sessao: string | null = await AsyncStorage.getItem('session')
+    if (sessao != null) {
+      const response = JSON.parse(sessao);
+      const instalacao = response.instalacao
+      const idEmpresa = response.idEmpresa
+      const acessToken = response.acessToken
+      console.log(plaqueta)
+
+      if (plaqueta == '') {
+        getInventarios(idEmpresa, instalacao, acessToken);
+        alert('Informe o número da plaqueta.')
+      } else {
+        getPlaqueta(plaqueta, idEmpresa, instalacao, acessToken)
+        setPlaqueta(setFormatPlaqueta(plaqueta))
+      }
+    }
+
+    setCarregando(false);
+  }
+
+  let getPlaqueta = async (plaqueta: any, idEmpresa: any, instalacao: any, acessToken: any) => {
+    try {
+      const resposta = await fetch(`${urlApi}/Inventario/BuscarPlaqueta/${plaqueta}/${idEmpresa}/${instalacao}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${acessToken}`,
+          'Content-Type': `application/json`
+        }
+      })
+      const json = await resposta.json();
+      const resultado = json.dados;
+      //console.log(`json chegou`)
+      setDados(resultado); // limita a 20 registros
+
+      if (resultado.length == 1) {
+        if (resultado[0].avlItmSit.toString() == 'I') {
+          alert('Este Bem já foi inventariado!');
+        }
+        if (resultado[0].avlItmSit.toString() == 'N') {
+          alert('Este Bem já foi inventariado!');
+        }
+        if (resultado[0].avlItmSit.toString() == 'S') {
+          console.log(resultado[0])
+          navigation.navigate("inventarios", { item: resultado[0] })
+        }
+      }
+
+
+      //validacoes Situacao inventariado mostrar uma mensagem que o bem foi inventariado
+
+
+    } catch (erro) {
+      console.error('Erro ao buscar dados da API:', erro);
+    } finally {
+      //setCarregando(false);
+    }
+  }
+
+
+  let setFormatPlaqueta = (value: string) => {
+    let sValue = value.replace(/[^0-9]/g, '');
+    let valor = parseInt(sValue);
+    if (valor < 10) {
+      sValue = '00000' + valor.toString()
+    }
+    else if (valor < 100) {
+      sValue = '0000' + valor.toString()
+    }
+    else if (valor < 1000) {
+      sValue = '000' + valor.toString()
+    }
+    else if (valor < 10000) {
+      sValue = '00' + valor.toString()
+    }
+    else if (valor < 100000) {
+      sValue = '0' + valor.toString()
+    }
+    return sValue
+  }
+
   const renderItem = ({ item }) => (
-
-    <TouchableOpacity
-      style={styles.row}
-      onPress={() => router.navigate('/inventarios', { Inventarios: item })}>
-      <Text style={styles.cell}>{item.avlItmPlq > 6 ? item.avlItmPlq : `0000${item.avlItmPlq}`}</Text>
+    <TouchableOpacity style={styles.row}
+      onPress={() => navigation.navigate("inventarios", { item })}>
+      <Text style={styles.cell}>{setFormatPlaqueta(item.avlItmPlq.toString())}</Text>
       <Text style={styles.cell}>{item.avlItmDes}</Text>
-      <Text style={styles.cell}>{item.avlItmSts == 1 ? `Novo` : `Inventariado` }</Text>
+      <Text style={styles.cell}>{item.avlItmSit == 'N' ? `Novo` : item.avlItmSit == 'S' ? `Sobra contabil` : item.avlItmSit == 'I' ? 'Inventariado' : item.avlItmSit == 'C' ? 'Concluído' : ''}</Text>
     </TouchableOpacity>
-
   );
 
-  function redirecionaInventario(){      
+  function redirecionaInventario() {
     router.navigate("/inventarios")
   }
 
+  function redirecionaMenu() {
+    if (Platform.OS === 'ios') {
+      router.navigate("/homeIOS")
+    } else {
+      router.navigate("/homeAndroid")
+    }
+  }
+
   return (
-    <View style={styles.container}>
+    <View style={styles.containerLista}>
       <Text style={styles.title}>Purple Manager</Text>
-      <Text style={styles.title}>Tabela de Inventários</Text>
+      <Text style={styles.title}>Inventários</Text>
+      <Text >{empresa} - {cnpj}</Text>
 
-      <View style={[styles.row, styles.header]}>
-        <Text style={[styles.cell, styles.headerText]}>Plaqueta</Text>
-        <Text style={[styles.cell, styles.headerText]}>Item</Text>
-        <Text style={[styles.cell, styles.headerText]}>Situação</Text>
+      <View style={styles.containerGrid}>
+        <View style={[styles.row, styles.header]}>
+          <Text style={[styles.cell, styles.headerText]}>Plaqueta</Text>
+          <Text style={[styles.cell, styles.headerText]}>Item</Text>
+          <Text style={[styles.cell, styles.headerText]}>Situação</Text>
+        </View>
+
+        {carregando ? (
+          <ActivityIndicator size="large" color="#6C3BAA" />
+        ) : (
+          <FlatList
+            data={dados}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={renderItem}
+            ListEmptyComponent={
+              <Text style={{ textAlign: 'center', marginTop: 20, color: 'gray' }}>
+                Nenhum registro encontrado.
+              </Text>
+            }
+          />
+        )}
       </View>
+      <Text style={styles.textCadastro}>PLAQUETA</Text>
+      <Input placeholder={'0000000'} keyboardType="numeric" value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} />
 
-      {carregando ? (
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : (
-        <FlatList
-          data={dados}
-          keyExtractor={(item, index) => index.toString()}
-          renderItem={renderItem}
-        />
-      )}
-
-        <Text style={styles.textCadastro} >PLAQUETA</Text>
-        <Input placeholder={'0000000'} value={plaqueta} onChangeText={(value) => setPlaqueta(value)}/>
-
-        <Button title="Buscar" onPress={buscarPlaqueta}/>
-        <Button title="Adicionar" onPress={redirecionaInventario}/>
-        <Button title="Voltar" onPress={() => router.back()} /> 
+      <Button title="Buscar" onPress={buscarPlaqueta} />
+      <Button title="Adicionar" onPress={redirecionaInventario} />
+      <Button title="Voltar" onPress={redirecionaMenu} />
     </View>
   );
 };
 
-export default TabelaAPI;
+export default ListaInventarios;

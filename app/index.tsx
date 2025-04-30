@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator } from "react-native"
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator, Platform } from "react-native"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useState } from "react"
@@ -10,13 +10,13 @@ import { Input } from "../components/input"
 
 import { styles } from "./styles";
 
-export default function Index(){
+const Index = () => {
 
     const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(false)
+    const [carregando, setCarregando] = useState(false);
     const [senha, setSenha] = useState("")
     const [email, setEmail] = useState("")
-    const urlApi = `http://development.eba-bu5ryrmq.us-east-1.elasticbeanstalk.com/Api`
+    const urlApi = `https://servicos.opurple.com.br/Api`
 
     function validarLogin(){
         if(email == ''){
@@ -24,17 +24,25 @@ export default function Index(){
         }else if(senha == ''){
             Alert.alert('Informe uma senha válida.')
         }else{
-            console.log(`{`+urlApi+`}/Acesso/Login/`+email+`/`+senha+``)
-            //console.log(`${urlApi}/Acesso/Login/${email}/${senha}`)
-            getLogin()
+            setCarregando(true);
+            getLogin(email, senha);
         }
     }
 
-    let getLogin = () =>{
-        fetch(`${urlApi}/Acesso/Login/${email}/${senha}`)
+    let getLogin = (email: string, senha: string) =>{
+        fetch(`${urlApi}/Acesso/Login/`,{
+            method:`POST`,
+            body: JSON.stringify({
+                'email': email,
+                'senha': senha,
+            }),
+            headers: {
+                'Content-type': 'application/json; charset=UTF-8',
+            },
+        })
         .then(res => {
             console.log(res.status);
-            //console.log(res.headers);
+            console.log(res.headers);
             return res.json();
         })
         .then(async (result) =>{
@@ -46,22 +54,19 @@ export default function Index(){
                 }
                 else
                 {
-                //setData(result)
+                    //setData(result)
 
-                await AsyncStorage.setItem(`session`, JSON.stringify(result.dados))
+                    await AsyncStorage.setItem(`session`, JSON.stringify(result.dados))
 
-                //console.log('-----token login -----')
+                    //console.log('-----token login -----')
 
-                //console.log(result.dados.acessToken)
-
-                //console.log(result.dados.nome)
-                //console.log(result.dados.email)
-                //console.log(result.dados.instalacao)
-                //console.log(result.dados.idEmpresa)
-                //console.log(result.status)
-                //console.log(result.dados.acessToken)
-
-                router.navigate("/home")
+                    //console.log(result.dados.acessToken)
+                    //console.log(result.dados.nome)     
+                    if(Platform.OS === 'ios'){
+                        router.navigate("/homeIOS")
+                    }else{
+                        router.navigate("/homeAndroid")
+                    }
                 }
             }else{
                 Alert.alert(`${result.mensagem}`)
@@ -71,14 +76,7 @@ export default function Index(){
             console.log(`api erro`)
             console.log(error);
         })
-        .finally(() => setLoading(false));
-    }
-
-    function novaMensagem(){      
-        setEmail(email)
-        Alert.alert(`Bem vindo, ${email}`)
-        router.navigate("/home")
-  
+        .finally(() => setCarregando(false));
     }
 
     function irCadastro(){      
@@ -93,13 +91,21 @@ export default function Index(){
             <Input value={email} onChangeText={(value) => setEmail(value.toLowerCase())}/>
             <Text style={styles.titleLogin}>Senha </Text>
             <Input secureTextEntry={true} value={senha} onChangeText={(value) => setSenha(value)}/>
-            
-            <Button title="Entrar" onPress={validarLogin} />
+            {
+                !carregando ? (
+                    <Button title="Entrar" onPress={validarLogin} />
+                ) : 
+                (
+                    <ActivityIndicator color={'#6C3BAA'} size={40}></ActivityIndicator>
+                )
+            }
             <Button title="Cadastre-se" onPress={irCadastro} />
-            <ActivityIndicator color={'#fff'} size={30}></ActivityIndicator>
+            
         </View>
     )
-}
+};
+
+export default Index;
 
 
 

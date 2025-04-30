@@ -8,6 +8,17 @@ export const styles = StyleSheet.create({
         gap:16,
         paddingBottom: 110,
     },
+    containerLista:{
+        flex:1,
+        padding:32,
+        backgroundColor:"#FFFFFF",
+        gap:16,
+        paddingBottom: 110,
+        height:'20%'
+    },
+    containerGrid:{
+        height:'40%',
+    },
     titleLogin:{
         color: "#6C3BAA",
         fontSize:24,
@@ -87,17 +98,23 @@ export const styles = StyleSheet.create({
         flexDirection: 'row',
         borderBottomWidth: 1,
         borderColor: '#ccc',
-        paddingVertical: 8,
+        paddingVertical: 6,
       },
-      header: {
+    header: {
         backgroundColor: '#eee',
         borderBottomWidth: 2,
-      },
-      cell: {
+    },
+    cell: {
         flex: 1,
-        paddingHorizontal: 8,
-      },
-      headerText: {
+        paddingHorizontal: 6,
+    },
+    headerText: {
         fontWeight: 'bold',
-      }
+    },
+    pickerContainer: {
+        borderWidth: 1,
+        borderColor: "#6C3BAA",
+        borderRadius: 8,
+        overflow: 'hidden',
+      },
 })

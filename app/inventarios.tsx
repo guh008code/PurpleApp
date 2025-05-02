@@ -3,7 +3,6 @@ import { router } from "expo-router"
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
 import { useRoute, useNavigation, createStaticNavigation } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React, { useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -71,49 +70,63 @@ const Inventarios = () => {
                   getLocal(idEmpresa, instalacao, acessToken)
 
                   if (item != null) {
-                        console.log(item)
-                        //Edicao
-                        //console.log('Edicao')
-                        setIdInventario(item.avlItmId.toString())
+                        if (item.avlItmId.toString() != '' && item.avlItmId.toString() != '0') {
+                              //console.log(item)
+                              //Edicao
+                              //console.log('Edicao')
+                              setIdInventario(item.avlItmId.toString())
 
-                        setEmpresa(item.avlItmEpsId.toString())
-                        //setDadosEmpresa(item.avlItmEpsId.toString())
-                        setPickerEnabled(false)
+                              setEmpresa(item.avlItmEpsId.toString())
+                              //setDadosEmpresa(item.avlItmEpsId.toString())
+                              setPickerEnabled(false)
 
-                        setLocal(item.avlItmLocId.toString())
-                        //setDadosLocal(item.avlItmLocId.toString())
-                        //console.log('id empresa')
-                        //console.log(item.avlItmEpsId.toString())
-                        getCentroDeCusto(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), instalacao, acessToken);
-                        setCentroDeCusto(item.avlItmCecId.toString())
+                              setLocal(item.avlItmLocId.toString())
+                              //setDadosLocal(item.avlItmLocId.toString())
+                              //console.log('id empresa')
+                              //console.log(item.avlItmEpsId.toString())
+                              getCentroDeCusto(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), instalacao, acessToken);
+                              setCentroDeCusto(item.avlItmCecId.toString())
 
-                        getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
-                        setSetor(item.avlItmSetId.toString())
+                              getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
+                              setSetor(item.avlItmSetId.toString())
 
-                        setPlaqueta(setFormatPlaqueta(item.avlItmPlq.toString()))
-                        if (item.avlItmPlqAnt.toString() != '') {
-                              setPlaquetaAnt(item.avlItmPlqAnt.toString())
+                              setPlaqueta(setFormatPlaqueta(item.avlItmPlq.toString()))
+                              if (item.avlItmPlqAnt.toString() != '') {
+                                    setPlaquetaAnt(item.avlItmPlqAnt.toString())
+                              } else {
+                                    setPlaquetaAnt(item.avlItmPlq.toString())
+                              }
+                              getItems(instalacao, acessToken)
+                              setItems(item.avlItmDes.toString())
+                              setDescricao(item.avlItmDes.toString())
+                              //setItems(item)
+                              setComplemento(item.avlItmComp.toString())
+                              setNumeroDeSerie(item.avlItmNumSer.toString())
+                              setConservacao(item.avlItmCon.toString())
+                              //console.log(item.avlItmCon.toString())
+                              setAndar(item.avlItmAnd.toString())
+                              setSituacao(item.avlItmSit.toString())
+                              if (item.avlItmSit.toString() == 'S') {
+                                    setBtnInventariar(true)
+                              }
+                              //setValorAquisicao(item.avlItmVlrAqs.toString())
+                              setStatus(item.avlItmSts.toString())
                         } else {
-                              setPlaquetaAnt(item.avlItmPlq.toString())
-                        }
-                        getItems(instalacao, acessToken)
-                        setItems(item.avlItmDes.toString())
-                        setDescricao(item.avlItmDes.toString())
-                        //setItems(item)
-                        setComplemento(item.avlItmComp.toString())
-                        setNumeroDeSerie(item.avlItmNumSer.toString())
-                        setConservacao(item.avlItmCon.toString())
-                        //console.log(item.avlItmCon.toString())
-                        setAndar(item.avlItmAnd.toString())
-                        setSituacao(item.avlItmSit.toString())
-                        if (item.avlItmSit.toString() == 'S') {
-                              setBtnInventariar(true)
-                        }
-                        //setValorAquisicao(item.avlItmVlrAqs.toString())
-                        setStatus(item.avlItmSts.toString())
+                              //novo registro
+                              setEmpresa(item.avlItmEpsId.toString())
+                              //setDadosEmpresa(item.avlItmEpsId.toString())
+                              setPickerEnabled(false)
 
-                  } else {
-                        //carregarnovo
+                              setPlaqueta(setFormatPlaqueta(item.avlItmPlq.toString()))
+                              if (item.avlItmPlqAnt.toString() != '') {
+                                    setPlaquetaAnt(item.avlItmPlqAnt.toString())
+                              } else {
+                                    setPlaquetaAnt(item.avlItmPlq.toString())
+                              }
+                              getItems(instalacao, acessToken)
+
+                              setSituacao('N')
+                        }
                   }
             }
             setCarregando(false);
@@ -288,6 +301,32 @@ const Inventarios = () => {
             }
             else {
                   setDadosCentroDeCusto([]);
+                  setDadosSetor([])
+            }
+            setCarregando(false)
+      }
+
+      let setDropDownCentroDeCusto = async (value) => {
+            setCarregando(true)
+            //carregar centro de custo
+            //console.log('droplocal')
+            //console.log(value)
+            setCentroDeCusto(value);
+            if (value != '') {
+                  let sessao: string | null = await AsyncStorage.getItem(`session`)
+                  if (sessao != null) {
+                        //console.log(response.instalacao);
+                        const response = JSON.parse(sessao);
+                        const instalacao = response.instalacao
+                        const idEmpresa = response.idEmpresa
+                        const acessToken = response.acessToken
+
+                        getSetor(idEmpresa.toString(), local.toString(), value.toString(), instalacao, acessToken)
+                  }
+            }
+            else {
+                  setDadosCentroDeCusto([]);
+                  setDadosSetor([])
             }
             setCarregando(false)
       }
@@ -298,23 +337,25 @@ const Inventarios = () => {
       }
 
       const setFormatPlaqueta = (value) => {
-            if (value.toString().length < 10) {
-                  value = '00000' + value
+            let sValue = value.replace(/[^0-9]/g, '');
+            let valor = parseInt(sValue);
+            if (valor < 10) {
+                  sValue = '00000' + valor.toString()
             }
-            else if (value.toString().length < 100) {
-                  value = '0000' + value
+            else if (valor < 100) {
+                  sValue = '0000' + valor.toString()
             }
-            else if (value.toString().length < 1000) {
-                  value = '000' + value
+            else if (valor < 1000) {
+                  sValue = '000' + valor.toString()
             }
-            else if (value.toString().length < 10000) {
-                  value = '00' + value
+            else if (valor < 10000) {
+                  sValue = '00' + valor.toString()
             }
-            else if (value.toString().length < 100000) {
-                  value = '0' + value
+            else if (valor < 100000) {
+                  sValue = '0' + valor.toString()
             }
+            return sValue
 
-            return value
       }
 
       let Salvar = async () => {
@@ -363,9 +404,10 @@ const Inventarios = () => {
                               if (idInventario != '') {
                                     console.log('executar edicao')
 
+                                    let novaSituacao = situacao.toString()
                                     //Se For sobre contabil virar Inventario
                                     if (situacao.toString() == 'S') {
-                                          setSituacao('I')
+                                          novaSituacao = 'I'
                                     }
 
                                     const resposta = await fetch(`${urlApi}/Inventario/Atualizar`, {
@@ -383,7 +425,7 @@ const Inventarios = () => {
                                                 'avlItmNumSer': numeroDeSerie.toString(),
                                                 'avlItmCon': conservacao.toString(),
                                                 'avlItmAnd': andar.toString(),
-                                                'avlItmSit': situacao.toString(),
+                                                'avlItmSit': novaSituacao.toString(),
                                                 'avlItmVlrAqs': '0',
                                                 'avlItmSts': status.toString(),
                                                 'avlItmUsrIncId': idUser.toString(),
@@ -401,7 +443,7 @@ const Inventarios = () => {
                                           if (resposta.ok) {
                                                 const json = await resposta.json();
                                                 alert('Registro salvo com sucesso!');
-                                                //router.navigate('/listaInventarios')
+                                                router.navigate('/listaInventarios')
                                           } else {
                                                 console.log(resposta.status)
                                                 throw new Error(`Erro ao atualizar: ${resposta.status}`);
@@ -412,24 +454,27 @@ const Inventarios = () => {
                                     }
                               } else {
                                     console.log('executar adicao')
-
+                                    console.log(acessToken)
+                                    console.log(instalacao)
+                                    console.log(empresa)
                                     const resposta = await fetch(`${urlApi}/Inventario/Adicionar`, {
                                           method: 'POST',
                                           body: JSON.stringify({
+                                                'avlItmId': 0,
                                                 'avlItmEpsId': empresa.toString(),
                                                 'avlItmLocId': local.toString(),
                                                 'avlItmCecId': centroDeCusto.toString(),
                                                 'avlItmSetId': setor.toString(),
                                                 'avlItmPlq': plaqueta.toString(),
-                                                'avlItmPlqAnt': plaquetaAnt.toString(),
+                                                'avlItmPlqAnt': plaqueta.toString(),
                                                 'avlItmDes': descricao.toString(),
                                                 'avlItmComp': complemento.toString(),
                                                 'avlItmNumSer': numeroDeSerie.toString(),
                                                 'avlItmCon': conservacao.toString(),
                                                 'avlItmAnd': andar.toString(),
                                                 'avlItmSit': situacao.toString(),
-                                                'avlItmVlrAqs': '0',
-                                                'avlItmSts': status.toString(),
+                                                'avlItmVlrAqs': 0,
+                                                'avlItmSts': 1,
                                                 'avlItmUsrIncId': idUser.toString(),
                                                 'avlItmUsrAltId': idUser.toString(),
                                                 'avlItmIstId': instalacao.toString(),
@@ -441,19 +486,25 @@ const Inventarios = () => {
                                     })
 
                                     console.log(resposta)
+                                    console.log(resposta.status)
+                                    console.log(resposta.ok)
                                     if (resposta.status) {
                                           if (resposta.ok) {
                                                 const json = await resposta.json();
-                                                console.log(json)
-                                                alert('Registro Incluído com sucesso!');
-                                                //router.navigate('/listaInventarios')
+                                                console.log(json.mensagem)
+                                                if(json.status){
+                                                      alert('Registro Incluído com sucesso!');
+                                                      router.navigate('/listaInventarios')
+                                                }else{
+                                                      alert(json.mensagem);
+                                                }
                                           } else {
-                                                console.log(resposta.status)
-                                                throw new Error(`Erro ao atualizar: ${resposta.status}`);
+                                                console.log(resposta)
+                                                throw new Error(`Erro ao incluir: ${resposta.status}`);
                                           }
                                     } else {
                                           console.log(resposta.status)
-                                          throw new Error(`Erro ao atualizar: ${resposta}`);
+                                          throw new Error(`Erro ao incluir: ${resposta}`);
                                     }
                               }
 
@@ -498,7 +549,7 @@ const Inventarios = () => {
                         </View>
                         <Text>CENTRO DE CUSTO</Text>
                         <View style={styles.pickerContainer}>
-                              <Picker selectedValue={centroDeCusto} onValueChange={(value) => setCentroDeCusto(value)}>
+                              <Picker selectedValue={centroDeCusto} onValueChange={(value) => setDropDownCentroDeCusto(value)}>
                                     <Picker.Item label="SELECIONE" value={``}></Picker.Item>
                                     {dadosCentroDeCusto.map((item) => (
                                           <Picker.Item key={item.cecId} label={item.cecCod + `-` + item.cecNom} value={item.cecId.toString()} />

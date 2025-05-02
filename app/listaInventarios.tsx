@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { View, Text, Alert, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from "expo-router"
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { Button } from "../components/button"
 import { Input } from "../components/input"
@@ -22,42 +21,42 @@ const ListaInventarios = () => {
   const [cnpj, setCnpj] = useState("")
 
   useEffect(() => {
-    const buscarDados = async () => {
-      let sessao: string | null = await AsyncStorage.getItem(`session`)
-      if (sessao == null) {
-        alert(`Sua Sessão caiu...`)
-        router.navigate("..")
-      } else {
-        try {
-          const response = JSON.parse(sessao);
-          const instalacao = response.instalacao
-          const idEmpresa = response.idEmpresa
-          const acessToken = response.acessToken
-
-          let itemEmpresa: string | null = await AsyncStorage.getItem(`empresa`)
-          if (itemEmpresa == null) {
-            getEmpresa(idEmpresa, instalacao, acessToken)
-            // Coloque aqui o que você quer executar
-          } else {
-            const empresa = JSON.parse(itemEmpresa);
-            const empresaLogado = empresa.epsNomFnt
-            const empresaCnpj = formatarCNPJ(empresa.epsCnpj)
-            setEmpresa(empresaLogado)
-            setCnpj(empresaCnpj)
-          }
-
-          getInventarios(idEmpresa, instalacao, acessToken);
-
-        } catch (erro) {
-          console.error('Erro ao buscar dados da API:', erro);
-        } finally {
-          //setCarregando(false);
-        }
-      }
-    };
-
-    buscarDados();
+    carregarDados();
+    setCarregando(false)
   }, []);
+
+  let carregarDados = async () => {
+    let sessao: string | null = await AsyncStorage.getItem(`session`)
+    if (sessao == null) {
+      alert(`Sua Sessão caiu...`)
+      router.navigate("..")
+    } else {
+      try {
+        const response = JSON.parse(sessao);
+        const instalacao = response.instalacao
+        const idEmpresa = response.idEmpresa
+        const acessToken = response.acessToken
+
+        let itemEmpresa: string | null = await AsyncStorage.getItem(`empresa`)
+        if (itemEmpresa == null) {
+          getEmpresa(idEmpresa, instalacao, acessToken)
+        } else {
+          const empresa = JSON.parse(itemEmpresa);
+          const empresaLogado = empresa.epsNomFnt
+          const empresaCnpj = formatarCNPJ(empresa.epsCnpj)
+          setEmpresa(empresaLogado)
+          setCnpj(empresaCnpj)
+        }
+
+        getInventarios(idEmpresa, instalacao, acessToken);
+
+      } catch (erro) {
+        console.error('Erro ao buscar dados da API:', erro);
+      } finally {
+
+      }
+    }
+  };
 
   const formatarCNPJ = (cnpj: string) => {
     return cnpj
@@ -68,6 +67,31 @@ const ListaInventarios = () => {
       .replace(/(\d{4})(\d)/, '$1-$2')
       .slice(0, 18); // Garante o tamanho máximo
   };
+
+  let adicionarNovo = async () => {
+    let sessao: string | null = await AsyncStorage.getItem(`session`)
+    if (sessao == null) {
+      alert(`Sua Sessão caiu...`)
+      router.navigate("..")
+    } else {
+
+      const response = JSON.parse(sessao);
+      const instalacao = response.instalacao
+      const idEmpresa = response.idEmpresa
+      const acessToken = response.acessToken
+
+      const Inventario = {
+        'avlItmId': 0,
+        'avlItmEpsId': idEmpresa.toString(),
+        'avlItmPlq': plaqueta.toString(),
+        'avlItmPlqAnt': plaqueta.toString(),
+        'avlItmIstId': instalacao.toString(),
+      }
+
+      navigation.navigate("inventarios", { item: Inventario })
+
+    }
+  }
 
 
   let getInventarios = async (idEmpresa: any, instalacao: any, acessToken: any) => {
@@ -150,28 +174,49 @@ const ListaInventarios = () => {
           'Content-Type': `application/json`
         }
       })
-      const json = await resposta.json();
-      const resultado = json.dados;
-      //console.log(`json chegou`)
-      setDados(resultado); // limita a 20 registros
 
-      if (resultado.length == 1) {
-        if (resultado[0].avlItmSit.toString() == 'I') {
-          alert('Este Bem já foi inventariado!');
+      if(resposta.ok){
+        const json = await resposta.json();
+        const resultado = json.dados;
+
+        //console.log(`json chegou`)
+        setDados(resultado); // limita a 20 registros
+  
+        if(resultado.status){
+          if (resultado.length == 1) {
+            if (resultado[0].avlItmSit.toString() == 'I') {
+              alert('Este Bem já foi inventariado!');
+            }
+            if (resultado[0].avlItmSit.toString() == 'N') {
+              alert('Este Bem já foi inventariado!');
+            }
+            if (resultado[0].avlItmSit.toString() == 'S') {
+              console.log(resultado[0])
+              navigation.navigate("inventarios", { item: resultado[0] })
+            }
+          }
+        }else{
+          console.log('plaqueta resultado false')
+          if(resultado == ''){
+            Alert.alert(
+              "",
+              "Número de plaqueta disponível!\n deseja utilizar?",
+              [
+                {
+                  text: "Não",
+                  style: "cancel"
+                },
+                { text: "SIM", onPress: () => adicionarNovo() }
+              ],
+              { cancelable: false }
+            );
+          }
+          console.log(resultado)
         }
-        if (resultado[0].avlItmSit.toString() == 'N') {
-          alert('Este Bem já foi inventariado!');
-        }
-        if (resultado[0].avlItmSit.toString() == 'S') {
-          console.log(resultado[0])
-          navigation.navigate("inventarios", { item: resultado[0] })
-        }
+
+      }else{
+        alert(resposta.statusText)
       }
-
-
-      //validacoes Situacao inventariado mostrar uma mensagem que o bem foi inventariado
-
-
     } catch (erro) {
       console.error('Erro ao buscar dados da API:', erro);
     } finally {

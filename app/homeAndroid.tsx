@@ -108,7 +108,7 @@ const HomeAndroid = () => {
     }
 
     function redirecionaSetor(){      
-        router.navigate("/setor")
+        //router.navigate("/setor")
     }
 
     function redirecionaMeuPerfil(){      

@@ -2,9 +2,10 @@ import { TouchableOpacity, View, ActivityIndicator, Text, StyleSheet, Image, Scr
 import { router } from "expo-router"
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Picker } from '@react-native-picker/picker';
-import { useRoute, useNavigation, createStaticNavigation } from '@react-navigation/native';
-import React, { useEffect, useState, useRef } from 'react';
+import { useRoute, useNavigation, createStaticNavigation, useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Network from 'expo-network';
 
 import { Button } from "../components/button"
 import { Input } from "../components/input"
@@ -22,6 +23,7 @@ const Inventarios = () => {
       const [pickerEnabled, setPickerEnabled] = useState(true);
       const [btnInventariar, setBtnInventariar] = useState(false);
 
+      const [tituloPage, setTituloPage] = useState('Novo Invetário')
       const [dadosEmpresa, setDadosEmpresa] = useState([]);
       const [dadosLocal, setDadosLocal] = useState([]);
       const [dadosCentroDeCusto, setDadosCentroDeCusto] = useState([]);
@@ -44,19 +46,24 @@ const Inventarios = () => {
       const [situacao, setSituacao] = useState('')
       const [status, setStatus] = useState('')
 
-      const [metodo, setMetodo] = ""
       const [urlFuncao, seturlFuncao] = useState('')
 
       const [idInventario, setIdInventario] = useState('')
 
-      useEffect(() => {
-            // Função que será executada assim que o componente carregar
-            validaSessao();
-            carregarDados(route.params?.item)
-            // Se quiser rodar só uma vez, deixe o array de dependências vazio
-      }, []);
+      useFocusEffect(
+            useCallback(() => {
+                  const fetchData = async () => {
+                        await validaSessao();
+                        await carregarDados(route.params?.item);
+                  };
+
+                  fetchData();
+            }, [route.params?.item])
+      );
 
       let carregarDados = async (item) => {
+            setCarregando(true)
+            await new Promise(resolve => setTimeout(resolve, 1000));
             let sessao: string | null = await AsyncStorage.getItem(`session`)
             if (sessao != null) {
 
@@ -66,64 +73,106 @@ const Inventarios = () => {
                   const instalacao = response.instalacao
                   const idEmpresa = response.idEmpresa
                   const acessToken = response.acessToken
-                  getEmpresa(instalacao, acessToken)
-                  getLocal(idEmpresa, instalacao, acessToken)
+                  await getEmpresa(instalacao, acessToken)
+                  await getLocal(idEmpresa, instalacao, acessToken)
 
                   if (item != null) {
                         if (item.avlItmId.toString() != '' && item.avlItmId.toString() != '0') {
                               //console.log(item)
                               //Edicao
-                              //console.log('Edicao')
+                              setTituloPage('Editar Inventário')
+                              console.log('Edicao')
                               setIdInventario(item.avlItmId.toString())
-
+                              console.log('IdInventario: ' + item.avlItmId.toString())
                               setEmpresa(item.avlItmEpsId.toString())
+                              console.log('empresa: ' + item.avlItmEpsId.toString())
                               //setDadosEmpresa(item.avlItmEpsId.toString())
                               setPickerEnabled(false)
 
                               setLocal(item.avlItmLocId.toString())
+                              console.log('local: ' + item.avlItmLocId.toString())
                               //setDadosLocal(item.avlItmLocId.toString())
                               //console.log('id empresa')
                               //console.log(item.avlItmEpsId.toString())
-                              getCentroDeCusto(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), instalacao, acessToken);
+                              await getCentroDeCusto(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), instalacao, acessToken);
                               setCentroDeCusto(item.avlItmCecId.toString())
+                              console.log('centro de custo: ' + item.avlItmCecId.toString())
 
-                              getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
+                              await getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
                               setSetor(item.avlItmSetId.toString())
+                              console.log('setor: ' + item.avlItmSetId.toString())
+                              console.log('plaqueta sem formato: ' + item.avlItmPlq.toString())
 
+                              console.log('plaquetaAnt sem formato: ' + item.avlItmPlqAnt)
                               setPlaqueta(setFormatPlaqueta(item.avlItmPlq.toString()))
-                              if (item.avlItmPlqAnt.toString() != '') {
-                                    setPlaquetaAnt(item.avlItmPlqAnt.toString())
+
+
+                              if (item.avlItmPlqAnt != '') {
+                                    setPlaquetaAnt(item.avlItmPlqAnt)
                               } else {
                                     setPlaquetaAnt(item.avlItmPlq.toString())
                               }
-                              getItems(instalacao, acessToken)
+                              console.log('plaqueta: ' + item.avlItmPlq.toString())
+                              console.log('plaqueta anterior: ' + item.avlItmPlqAnt)
+
+                              await getItems(instalacao, acessToken)
                               setItems(item.avlItmDes.toString())
+                              console.log('item: ' + item.avlItmDes.toString())
+
                               setDescricao(item.avlItmDes.toString())
+                              console.log('descrcao: ' + item.avlItmDes.toString())
                               //setItems(item)
                               setComplemento(item.avlItmComp.toString())
+                              console.log('complemento: ' + item.avlItmComp.toString())
+
                               setNumeroDeSerie(item.avlItmNumSer.toString())
+                              console.log('numero de serie: ' + item.avlItmNumSer.toString())
+
                               setConservacao(item.avlItmCon.toString())
+                              console.log('conservacao: ' + item.avlItmCon.toString())
+
                               //console.log(item.avlItmCon.toString())
                               setAndar(item.avlItmAnd.toString())
+                              console.log('andar: ' + item.avlItmAnd.toString())
+
                               setSituacao(item.avlItmSit.toString())
                               if (item.avlItmSit.toString() == 'S') {
                                     setBtnInventariar(true)
                               }
+                              console.log('situacao: ' + item.avlItmSit.toString())
+
                               //setValorAquisicao(item.avlItmVlrAqs.toString())
                               setStatus(item.avlItmSts.toString())
+                              console.log('status: ' + item.avlItmSts.toString())
+
                         } else {
+                              console.log('Novo registro')
                               //novo registro
                               setEmpresa(item.avlItmEpsId.toString())
                               //setDadosEmpresa(item.avlItmEpsId.toString())
                               setPickerEnabled(false)
 
+                              setLocal(item.avlItmLocId.toString())
+                              console.log('local: ' + item.avlItmLocId.toString())
+                              //setDadosLocal(item.avlItmLocId.toString())
+                              //console.log('id empresa')
+                              //console.log(item.avlItmEpsId.toString())
+                              await getCentroDeCusto(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), instalacao, acessToken);
+                              setCentroDeCusto(item.avlItmCecId.toString())
+                              console.log('centro de custo: ' + item.avlItmCecId.toString())
+
+                              //await getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
+                              
+                              //setSetor(item.avlItmSetId.toString())
+                              //console.log('setor: ' + item.avlItmSetId.toString())
+
                               setPlaqueta(setFormatPlaqueta(item.avlItmPlq.toString()))
                               if (item.avlItmPlqAnt.toString() != '') {
                                     setPlaquetaAnt(item.avlItmPlqAnt.toString())
                               } else {
                                     setPlaquetaAnt(item.avlItmPlq.toString())
                               }
-                              getItems(instalacao, acessToken)
+                              await getItems(instalacao, acessToken)
 
                               setSituacao('N')
                         }
@@ -133,11 +182,34 @@ const Inventarios = () => {
       }
 
 
+      const verificarConexao = async () => {
+            const estado = await Network.getNetworkStateAsync();
+            if (!estado.isConnected || !estado.isInternetReachable) {
+                  alert('Sem conexão com a internet');
+                  return false;
+            } else {
+                  console.log('Conectado à internet');
+                  return true;
+            }
+      };
+
+      const isEmpty = (value) => {
+            return (
+              value === undefined ||
+              value === null ||
+              (typeof value === "string" && value.trim() === "") ||
+              (Array.isArray(value) && value.length === 0) ||
+              (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0)
+            );
+          };
+
+
       let validaSessao = async () => {
             let sessao: string | null = await AsyncStorage.getItem(`session`)
             if (sessao == null) {
                   alert(`Sua Sessão caiu...`)
                   router.navigate("..")
+                  return;
             }
       }
 
@@ -296,7 +368,7 @@ const Inventarios = () => {
                         const instalacao = response.instalacao
                         const idEmpresa = response.idEmpresa
                         const acessToken = response.acessToken
-                        getCentroDeCusto(idEmpresa.toString(), value.toString(), instalacao, acessToken);
+                        await getCentroDeCusto(idEmpresa.toString(), value.toString(), instalacao, acessToken);
                   }
             }
             else {
@@ -321,7 +393,7 @@ const Inventarios = () => {
                         const idEmpresa = response.idEmpresa
                         const acessToken = response.acessToken
 
-                        getSetor(idEmpresa.toString(), local.toString(), value.toString(), instalacao, acessToken)
+                        await getSetor(idEmpresa.toString(), local.toString(), value.toString(), instalacao, acessToken)
                   }
             }
             else {
@@ -336,7 +408,7 @@ const Inventarios = () => {
             setDescricao(value);
       }
 
-      const setFormatPlaqueta = (value) => {
+      let setFormatPlaqueta = (value: string) => {
             let sValue = value.replace(/[^0-9]/g, '');
             let valor = parseInt(sValue);
             if (valor < 10) {
@@ -355,7 +427,6 @@ const Inventarios = () => {
                   sValue = '0' + valor.toString()
             }
             return sValue
-
       }
 
       let Salvar = async () => {
@@ -492,10 +563,10 @@ const Inventarios = () => {
                                           if (resposta.ok) {
                                                 const json = await resposta.json();
                                                 console.log(json.mensagem)
-                                                if(json.status){
+                                                if (json.status) {
                                                       alert('Registro Incluído com sucesso!');
                                                       router.navigate('/listaInventarios')
-                                                }else{
+                                                } else {
                                                       alert(json.mensagem);
                                                 }
                                           } else {
@@ -519,14 +590,19 @@ const Inventarios = () => {
       }
 
       return (
+      <SafeAreaView style={{ flex: 1 }}>
 
+
+            {carregando ? (
+                  <View style={styles.containerMenu}>
+                  <Text style={styles.title}>Carregando os dados...</Text>
+                  <ActivityIndicator size="large" color="#6C3BAA" />
+                  </View>
+            ) : (
             <ScrollView>
                   <View style={styles.containerMenu}>
-                        <Text style={styles.title}>Purple Manager</Text>
-                        <Text style={styles.titlePequeno}>
-                              {carregando ? (
-                                    <ActivityIndicator size="large" color="#6C3BAA" />
-                              ) : (`Cadastrar Inventário`)}
+                        <Text style={styles.title}>Purple Collector</Text>
+                        <Text style={styles.titlePequeno}> {tituloPage}
                         </Text>
 
                         <Text>EMPRESA</Text>
@@ -558,6 +634,9 @@ const Inventarios = () => {
                         </View>
 
                         <Text>PLAQUETA</Text>
+                        <Input value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} placeholder={'000000'} />
+
+                        <Text>NOVA PLAQUETA</Text>
                         <Input value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} placeholder={'000000'} />
 
                         <Text>SETOR</Text>
@@ -625,7 +704,9 @@ const Inventarios = () => {
                         <Button title="Voltar" onPress={() => router.navigate('/listaInventarios')} />
                   </View>
             </ScrollView>
+            )}
 
+      </SafeAreaView>
       )
 };
 

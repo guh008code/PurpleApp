@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect } from "react"
 import { Button } from "../components/button"
 import { styles } from "./styles";
+import * as Network from 'expo-network';
 import ListaInventarios from "./listaInventarios";
 
 const HomeAndroid = () => {
@@ -26,6 +27,20 @@ const HomeAndroid = () => {
     
         // Se quiser rodar só uma vez, deixe o array de dependências vazio
       }, []);
+
+
+      const verificarConexao = async () => {
+        const estado = await Network.getNetworkStateAsync();
+        if (!estado.isConnected || !estado.isInternetReachable) {
+          alert('Sem conexão com a internet');
+          console.log('Sem conexão com a internet');
+          return false;
+        } else {
+          console.log('Conectado à internet');
+          return true;
+        }
+      };
+    
     
       const carregarDados = async () => {
         let sessao:string | null = await AsyncStorage.getItem(`session`)
@@ -51,7 +66,7 @@ const HomeAndroid = () => {
             //console.log(`Bearer ${acessToken}`);
     
             //console.log(`instalacao ${instalacao}`);
-            //console.log(`idEmpresa ${idEmpresa}`);
+            //console.log(`idEmpresa ${idEmpresa}`);s
 
             let itemEmpresa: string | null = await AsyncStorage.getItem(`empresa`)
             if(itemEmpresa == null ){
@@ -149,10 +164,10 @@ const HomeAndroid = () => {
 
 return(
     <View style={styles.containerMenu}>
-    <Text style={styles.title}>Purple Manager</Text>
-    <Text style={styles.textMenu}> Bem vindo {nomeLogado} </Text>
-    <Text style={styles.textMenu}> Acesso: {email} </Text>
-    <Text style={styles.textMenu}>{empresaLogado} - {empresaCnpj}</Text>
+    <Text style={styles.title}>Purple Collector</Text>
+    <Text style={styles.titleMedio}> Bem vindo {nomeLogado} </Text>
+    <Text style={styles.titleMedio}> Login: {email} </Text>
+    <Text style={styles.titleMedio}>{empresaLogado} - {empresaCnpj}</Text>
         
     <Button title="Inventários" onPress={redirecionaInventario} /> 
     <Button title="Setor" onPress={redirecionaSetor} /> 

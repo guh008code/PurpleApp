@@ -1,4 +1,4 @@
-import { StyleSheet, StatusBar} from "react-native";
+import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
     container:{
@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
         height:'20%'
     },
     containerGrid:{
-        height:'40%',
+        //height:'30%',
     },
     titleLogin:{
         color: "#6C3BAA",
@@ -27,7 +27,24 @@ export const styles = StyleSheet.create({
     title:{
         color: "#6C3BAA",
         fontSize:24,
-        fontWeight: "bold"
+        fontWeight: "bold",
+        textAlign:"center"
+    },
+    titleMedio:{
+        color: "#6C3BAA",
+        fontSize:15,
+        fontWeight: "bold",
+    },
+    titleMedioCenter:{
+        color: "#6C3BAA",
+        fontSize:15,
+        fontWeight: "bold",
+        textAlign:"center"
+    },
+    titleMenor:{
+        color: "#6C3BAA",
+        fontSize:11,
+        fontWeight: "bold",
     },
     titlePequeno:{
         color: "#6C3BAA",
@@ -106,7 +123,7 @@ export const styles = StyleSheet.create({
     },
     cell: {
         flex: 1,
-        paddingHorizontal: 6,
+        paddingHorizontal: 5,
     },
     headerText: {
         fontWeight: 'bold',
@@ -117,4 +134,14 @@ export const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
       },
+      dropDownMenor:{ 
+        width:"100%",
+        height:52,
+        borderRadius:8,
+        borderWidth:1,
+        borderColor:"#6C3BAA",
+        padding:12,
+        fontSize:12},
+
+
 })

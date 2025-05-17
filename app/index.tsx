@@ -1,7 +1,8 @@
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Image, ActivityIndicator, Platform } from "react-native"
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import { useState } from "react"
+import * as Network from 'expo-network';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import React, { useEffect, useState } from 'react';
 import { router } from "expo-router"
 
 import { Button } from "../components/button"
@@ -18,7 +19,22 @@ const Index = () => {
     const [email, setEmail] = useState("")
     const urlApi = `https://servicos.opurple.com.br/Api`
 
+
+    useEffect(() => {
+        async function enableAutoRotation() {
+          await ScreenOrientation.unlockAsync();
+        }
+
+        async function disableAutoRotation() {
+         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP); // Or any preferred lock
+        }
+
+        enableAutoRotation();
+
+      }, []);
+
     function validarLogin(){
+        verificarConexao();
         if(email == ''){
             Alert.alert('Informe um email válido.')
         }else if(senha == ''){
@@ -28,6 +44,19 @@ const Index = () => {
             getLogin(email, senha);
         }
     }
+
+    const verificarConexao = async () => {
+        const estado = await Network.getNetworkStateAsync();
+        if (!estado.isConnected || !estado.isInternetReachable) {
+          alert('Sem conexão com a internet');
+          console.log('Sem conexão com a internet');
+          return false;
+        } else {
+          console.log('Conectado à internet');
+          return true;
+        }
+      };
+    
 
     let getLogin = (email: string, senha: string) =>{
         fetch(`${urlApi}/Acesso/Login/`,{
@@ -61,12 +90,13 @@ const Index = () => {
                     //console.log('-----token login -----')
 
                     //console.log(result.dados.acessToken)
-                    //console.log(result.dados.nome)     
-                    if(Platform.OS === 'ios'){
-                        router.navigate("/homeIOS")
-                    }else{
-                        router.navigate("/homeAndroid")
-                    }
+                    //console.log(result.dados.nome)    
+                    router.navigate("/home") 
+                    //if(Platform.OS === 'ios'){
+                      //  router.navigate("/homeIOS")
+                    //}else{
+                      //  router.navigate("/homeAndroid")
+                    //}
                 }
             }else{
                 Alert.alert(`${result.mensagem}`)

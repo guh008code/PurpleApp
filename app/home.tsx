@@ -97,12 +97,12 @@ const HomeAndroid = () => {
             headers: {Authorization: `Bearer ${acessToken}`}
         })
         .then(res => {
-            console.log(res.status);
+            //console.log(res.status);
             //console.log(res.headers);
             return res.json();
         })
         .then(async (result) =>{
-            console.log(result);
+            //console.log(result);
 
             if(result.status){
                 result.dados.epsCnpj = formatarCNPJ(result.dados.epsCnpj)
@@ -122,8 +122,20 @@ const HomeAndroid = () => {
         .finally();
     }
 
+    function redirecionaInventario(){      
+        router.navigate("/listaInventarios")
+    }
+
     function redirecionaSetor(){      
         //router.navigate("/setor")
+    }
+
+    function redirecionaScannear(){      
+        //router.navigate("/setor")
+    }
+
+    function redirecionaRelatorios(){      
+        router.navigate("/DashboardScreen")
     }
 
     function redirecionaMeuPerfil(){      
@@ -134,9 +146,7 @@ const HomeAndroid = () => {
         router.navigate("/estoques")
     }
 
-    function redirecionaInventario(){      
-        router.navigate("/listaInventarios")
-    }
+
 
     function validarSaida(){
         Alert.alert(
@@ -170,9 +180,8 @@ return(
     <Text style={styles.titleMedio}>{empresaLogado} - {empresaCnpj}</Text>
         
     <Button title="Inventários" onPress={redirecionaInventario} /> 
-    <Button title="Setor" onPress={redirecionaSetor} /> 
-    <Button title="Scannear" /> 
-    <Button title="Relatórios" /> 
+    <Button title="Scannear" onPress={redirecionaScannear} /> 
+    <Button title="Relatórios" onPress={redirecionaRelatorios} /> 
     <Button title="Meu Perfil" onPress={redirecionaMeuPerfil} /> 
 
     <Button title="SAIR" onPress={validarSaida} />

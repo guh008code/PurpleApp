@@ -31,7 +31,7 @@ const ListaInventarios = () => {
   const [centroDeCusto, setCentroDeCusto] = useState('')
 
   //useEffect(() => {
-    //carregarDados();
+  //carregarDados();
   //}, []);
 
   useFocusEffect(
@@ -40,10 +40,21 @@ const ListaInventarios = () => {
         await verificarConexao();
         //setCarregando(true);
         await carregarDados();
-        await buscarPlaqueta();
+        let itemFiltros: string | null = await AsyncStorage.getItem(`filtro`);
+        if (itemFiltros != null) {
+          console.log('memória do filtro')
+          console.log(itemFiltros)
+          const inventario = JSON.parse(itemFiltros);
+          const iLocal = inventario.avlItmLocId;
+          const iCusto = inventario.avlItmCecId;
+
+          await buscarPlaqueta(iLocal, iCusto);
+        } else {
+          await buscarPlaqueta();
+        }
         //setCarregando(false);
       };
-  
+
       fetchData();
     }, [])
   );
@@ -67,15 +78,15 @@ const ListaInventarios = () => {
       router.navigate("..")
       return;
     }
-  
+
     try {
       const response = JSON.parse(sessao);
       const instalacao = response.instalacao;
       const idEmpresa = response.idEmpresa;
       const acessToken = response.acessToken;
-  
+
       await getLocal(idEmpresa, instalacao, acessToken);
-  
+
       let itemEmpresa: string | null = await AsyncStorage.getItem(`empresa`);
       if (itemEmpresa == null) {
         await getEmpresa(idEmpresa, instalacao, acessToken);
@@ -86,10 +97,39 @@ const ListaInventarios = () => {
         setEmpresa(empresaLogado);
         setCnpj(empresaCnpj);
       }
+
+
+      let itemFiltros: string | null = await AsyncStorage.getItem(`filtro`);
+      if (itemFiltros != null) {
+        //console.log('memória do filtro')
+        //console.log(itemFiltros)
+        const inventario = JSON.parse(itemFiltros);
+        const iLocal = inventario.avlItmLocId;
+        const iCusto = inventario.avlItmCecId;
+
+        if (iLocal !== null && iLocal !== undefined && iLocal !== '' && iLocal !== '0') {
+          setLocal(iLocal)
+          //console.log(`local: ${local}`)
+          //console.log(`local i: ${iLocal}`)
+          if (iCusto !== null && iCusto !== undefined && iCusto !== '' && iCusto !== '0') {
+            //console.log('funcao getInventariosCentroDeCusto')
+            await getCentroDeCusto(idEmpresa.toString(), iLocal.toString(), instalacao, acessToken);
+            setCentroDeCusto(iCusto)
+            //console.log(`CentroDeCusto: ${centroDeCusto}`)
+            //console.log(`CentroDeCusto i: ${iCusto}`)
+            //await getInventariosCentroDeCusto(idEmpresa, iLocal.toString(), iCusto.toString(), instalacao, acessToken);       
+          } else {
+            //console.log('funcao getCentroDeCusto')
+            await getCentroDeCusto(idEmpresa.toString(), iLocal.toString(), instalacao, acessToken);
+            //await getInventariosLocal(idEmpresa, iLocal.toString(), instalacao, acessToken);
+          }
+        }
+      }
+
       //await getInventarios(idEmpresa, instalacao, acessToken);
     } catch (erro) {
       console.error('Erro ao buscar dados da API:', erro);
-    }finally {
+    } finally {
       setCarregando(false);
     }
   };
@@ -117,29 +157,37 @@ const ListaInventarios = () => {
       //centro de custo se tiver sido selecionar
       //salvar na sessao
 
-
       const response = JSON.parse(sessao);
       const instalacao = response.instalacao
       const idEmpresa = response.idEmpresa
       const acessToken = response.acessToken
 
       const Inventario = {
-        'avlItmId': 0,  
+        'avlItmId': 0,
         'avlItmEpsId': idEmpresa.toString(),
-        'avlItmLocId':local.toString(),
-        'avlItmCecId':centroDeCusto.toString(),
+        'avlItmLocId': local.toString(),
+        'avlItmCecId': centroDeCusto.toString(),
         'avlItmPlq': plaqueta.toString(),
         'avlItmPlqAnt': plaqueta.toString(),
         'avlItmIstId': instalacao.toString(),
       }
 
-      await AsyncStorage.setItem(`Filtro`, JSON.stringify(Inventario))
+      await AsyncStorage.setItem(`filtro`, JSON.stringify(Inventario))
 
-      navigation.navigate("inventarios", { item: Inventario });
-
+      Alert.alert(
+        "",
+        "Número de plaqueta disponível!\n deseja utilizar?",
+        [
+          {
+            text: "Não",
+            style: "cancel"
+          },
+          { text: "SIM", onPress: () => navigation.navigate("inventarios", { item: Inventario }) }
+        ],
+        { cancelable: false }
+      );
     }
   }
-
 
   let getInventarios = async (idEmpresa: any, instalacao: any, acessToken: any) => {
 
@@ -155,17 +203,18 @@ const ListaInventarios = () => {
       //console.log(`json chegou`)
       //console.log(json)
 
-      if(json.status){
+      if (json.status) {
         setDados(json.dados); // limita a 20 registros
         setTotalReg(json.dados.length);
-      }else{
+      } else {
         setTotalReg("0");
-        setDados([]); 
-        console.log(json.mensagem)
+        setDados([]);
+        //console.log(json.mensagem)
       }
     } catch (erro) {
+      setTotalReg("0");
       console.error('Erro ao buscar dados da API:', erro);
-      setDados([]); 
+      setDados([]);
     } finally {
       //setCarregando(false);
     }
@@ -184,15 +233,16 @@ const ListaInventarios = () => {
       const json = await resposta.json();
       //console.log(`json chegou`)
       //console.log(json)
-      if(json.status){
+      if (json.status) {
         setDados(json.dados); // limita a 20 registros
         setTotalReg(json.dados.length);
-      }else{
+      } else {
         setTotalReg("0");
         setDados([]);
-        console.log(json.mensagem)
+        //console.log(json.mensagem)
       }
     } catch (erro) {
+      setTotalReg("0");
       console.error('Erro ao buscar dados da API:', erro);
       setDados([]);
     } finally {
@@ -212,16 +262,22 @@ const ListaInventarios = () => {
       })
       const json = await resposta.json();
       //console.log(`json chegou`)
+      //console.log(resposta)
+      //console.log('--------')
       //console.log(json)
-      if(json.status){
+      if (json.status) {
+        console.log('--------')
+        console.log(json.status)
         setDados(json.dados); // limita a 20 registros
         setTotalReg(json.dados.length);
-      }else{
+
+      } else {
         setTotalReg("0");
         setDados([]);
-        console.log(json.mensagem)
+        //console.log(json.mensagem)
       }
     } catch (erro) {
+      setTotalReg("0");
       setDados([]);
       console.error('Erro ao buscar dados da API:', erro);
     } finally {
@@ -258,7 +314,6 @@ const ListaInventarios = () => {
       .finally();
   }
 
-
   let getLocal = (idEmpresa: any, instalacao: any, acessToken: any) => {
     fetch(`${urlApi}/Local/ListarTodos/${idEmpresa}/${instalacao}`, {
       headers: { Authorization: `Bearer ${acessToken}` }
@@ -275,8 +330,8 @@ const ListaInventarios = () => {
           //console.log(result.dados)
           setDadosLocal(result.dados);
         } else {
-          console.log(result);
-          console.log(result.mensagem);
+          //console.log(result);
+          //console.log(result.mensagem);
           setDadosLocal([]);
           //alert(`${result.mensagem}`)
         }
@@ -305,7 +360,7 @@ const ListaInventarios = () => {
           //console.log(result.dados)
           setDadosCentroDeCusto(result.dados);
         } else {
-          console.log(result.mensagem);
+          //console.log(result.mensagem);
 
           setDadosCentroDeCusto([]);
           //alert(`${result.mensagem}`)
@@ -318,7 +373,7 @@ const ListaInventarios = () => {
       .finally();
   }
 
-  const buscarPlaqueta = async () => {
+  const buscarPlaqueta = async (vLocal?: string, vCentroDeCusto?: string) => {
     setCarregando(true)
     await verificarConexao();
 
@@ -329,37 +384,88 @@ const ListaInventarios = () => {
         const instalacao = response.instalacao
         const idEmpresa = response.idEmpresa
         const acessToken = response.acessToken
-        console.log(`plaqueta: ${plaqueta}`)
-        console.log(`CentroDeCusto: ${centroDeCusto}`)
-        console.log(`local: ${local}`)
-        console.log(`acess: ${acessToken}`)
-        console.log(`empresa: ${idEmpresa}`)
-        console.log(`instalacao: ${instalacao}`)
 
-        if (plaqueta.toString() == '' || parseInt(plaqueta) == 0) {
-          if (centroDeCusto != '' && centroDeCusto != '0') {
-            await getInventariosCentroDeCusto(idEmpresa, local, centroDeCusto, instalacao, acessToken);
+        //console.log(`--Buscar plaqueta:--`)
+
+        //console.log(`acess: ${acessToken}`)
+        //console.log(`empresa: ${idEmpresa}`)
+        //console.log(`instalacao: ${instalacao}`)
+
+        let sPlaqueta = '';
+        let sLocal = ''
+        let sCentroDeCusto = '';
+
+        sPlaqueta = plaqueta;
+        sLocal = local;
+        sCentroDeCusto = centroDeCusto;
+
+        if (vLocal !== null && vLocal !== undefined && vLocal !== '' && typeof vLocal === 'string') {
+          sLocal = vLocal;
+          setLocal(sLocal)
+        }
+        if (vCentroDeCusto !== null && vCentroDeCusto !== undefined && vCentroDeCusto !== '' && typeof vCentroDeCusto === 'string') {
+          sCentroDeCusto = vCentroDeCusto;
+          setCentroDeCusto(sCentroDeCusto)
+        }
+
+        //console.log(`plaqueta: ${sPlaqueta}`)
+        //console.log(`sLocal: ${sLocal}`)
+        //console.log(`sCentroDeCusto: ${sCentroDeCusto}`)
+
+        if (sPlaqueta.toString() == '' || parseInt(sPlaqueta) == 0) {
+
+          const Inventario = {
+            'avlItmId': 0,
+            'avlItmEpsId': idEmpresa.toString(),
+            'avlItmLocId': sLocal.toString(),
+            'avlItmCecId': sCentroDeCusto.toString(),
+            'avlItmPlq': sPlaqueta.toString(),
+            'avlItmPlqAnt': sPlaqueta.toString(),
+            'avlItmIstId': instalacao.toString(),
           }
-          else if (local != '' && local != '0') {
-            await getInventariosLocal(idEmpresa, local, instalacao, acessToken);
+
+          await AsyncStorage.setItem(`filtro`, JSON.stringify(Inventario))
+
+          if (sCentroDeCusto != '' && sCentroDeCusto != '0') {
+            //console.log(`getInventariosCentroDeCusto`)
+            await getInventariosCentroDeCusto(idEmpresa, sLocal, sCentroDeCusto, instalacao, acessToken);
+          }
+          else if (sLocal != '' && sLocal != '0') {
+            //console.log(`getInventariosLocal`)
+            await getInventariosLocal(idEmpresa, sLocal, instalacao, acessToken);
           } else {
+            //console.log(`getInventarios`)
             await getInventarios(idEmpresa, instalacao, acessToken);
           }
         }
         else {
-          if (centroDeCusto != '' && centroDeCusto != '0') {
-            await getPlaquetaPorCentroDeCusto(plaqueta, idEmpresa, local, centroDeCusto, instalacao, acessToken);
-          }
-          else if (local != '' && local != '0') {
-            await getPlaquetaPorLocal(plaqueta, idEmpresa, local, instalacao, acessToken);
-          } else {
-            await getPlaqueta(plaqueta, idEmpresa, instalacao, acessToken)
+
+          const Inventario = {
+            'avlItmId': 0,
+            'avlItmEpsId': idEmpresa.toString(),
+            'avlItmLocId': sLocal.toString(),
+            'avlItmCecId': sCentroDeCusto.toString(),
+            'avlItmPlq': sPlaqueta.toString(),
+            'avlItmPlqAnt': sPlaqueta.toString(),
+            'avlItmIstId': instalacao.toString(),
           }
 
-          setPlaqueta(setFormatPlaqueta(plaqueta))
+          await AsyncStorage.setItem(`filtro`, JSON.stringify(Inventario))
+
+          if (sCentroDeCusto != '' && sCentroDeCusto != '0') {
+            await getPlaquetaPorCentroDeCusto(sPlaqueta, idEmpresa, sLocal, sCentroDeCusto, instalacao, acessToken);
+          }
+          else if (sLocal != '' && sLocal != '0') {
+            await getPlaquetaPorLocal(sPlaqueta, idEmpresa, sLocal, instalacao, acessToken);
+          } else {
+            await getPlaqueta(sPlaqueta, idEmpresa, instalacao, acessToken)
+          }
+
+          setPlaqueta(setFormatPlaqueta(sPlaqueta))
         }
       }
     } catch (erro) {
+      console.log(erro)
       console.error('Erro ao buscar dados da API:', erro);
     } finally {
       setCarregando(false);
@@ -378,9 +484,9 @@ const ListaInventarios = () => {
 
       if (resposta.ok) {
         const json = await resposta.json();
-        
-        console.log(`json chegou`)
-        console.log(json)
+
+        //console.log(`json chegou`)
+        //console.log(json)
 
         if (json.status) {
           const resultado = json.dados;
@@ -394,39 +500,27 @@ const ListaInventarios = () => {
               alert('Este Bem já foi inventariado!');
             }
             if (resultado[0].avlItmSit.toString() == 'S') {
-              console.log(resultado[0])
+              //console.log(resultado[0])
               navigation.navigate("inventarios", { item: resultado[0] });
             }
           }
         } else {
           setTotalReg("0")
           setDados([]);
-            adicionarNovo();
-
-            //Alert.alert(
-            //"",
-            //"Número de plaqueta disponível!\n deseja utilizar?",
-            //[
-            //{
-            //text: "Não",
-            //style: "cancel"
-            //},
-            //{ text: "SIM", onPress: () => adicionarNovo() }
-            //],
-            //{ cancelable: false }
-            //);
+          adicionarNovo();
         }
 
       } else {
         alert(resposta.statusText)
       }
     } catch (erro) {
+      setTotalReg("0")
       setDados([]);
       console.error('Erro ao buscar dados da API:', erro);
-    } 
+    }
   }
 
-  let getPlaquetaPorLocal = async (plaqueta: any, idEmpresa: any, idLocal:any, instalacao: any, acessToken: any) => {
+  let getPlaquetaPorLocal = async (plaqueta: any, idEmpresa: any, idLocal: any, instalacao: any, acessToken: any) => {
     try {
       const resposta = await fetch(`${urlApi}/Inventario/BuscarPlaquetaPorLocal/${plaqueta}/${idEmpresa}/${idLocal}/${instalacao}`, {
         method: 'GET',
@@ -453,33 +547,33 @@ const ListaInventarios = () => {
               alert('Este Bem já foi inventariado!');
             }
             if (resultado[0].avlItmSit.toString() == 'S') {
-              console.log(resultado[0])
+              //console.log(resultado[0])
               navigation.navigate("inventarios", { item: resultado[0] });
             }
           }
         } else {
           setTotalReg("0")
           setDados([]);
-            adicionarNovo();
-
-            //Alert.alert(
-            //"",
-            //"Número de plaqueta disponível!\n deseja utilizar?",
-            //[
-            //{
-            //text: "Não",
-            //style: "cancel"
-            //},
-            //{ text: "SIM", onPress: () => adicionarNovo() }
-            //],
-            //{ cancelable: false }
-            //);
+          adicionarNovo();
+          //Alert.alert(
+          //"",
+          //"Número de plaqueta disponível!\n deseja utilizar?",
+          //[
+          //{
+          //text: "Não",
+          //style: "cancel"
+          //},
+          //{ text: "SIM", onPress: () => adicionarNovo() }
+          //],
+          //{ cancelable: false }
+          //);
         }
 
       } else {
         alert(resposta.statusText)
       }
     } catch (erro) {
+      setTotalReg("0")
       setDados([]);
       console.error('Erro ao buscar dados da API:', erro);
     } finally {
@@ -487,7 +581,7 @@ const ListaInventarios = () => {
     }
   }
 
-  let getPlaquetaPorCentroDeCusto = async (plaqueta: any, idEmpresa: any, idLocal:any, idCentroDeCusto:any, instalacao: any, acessToken: any) => {
+  let getPlaquetaPorCentroDeCusto = async (plaqueta: any, idEmpresa: any, idLocal: any, idCentroDeCusto: any, instalacao: any, acessToken: any) => {
     try {
       const resposta = await fetch(`${urlApi}/Inventario/BuscarPlaquetaPorCentroDeCusto/${plaqueta}/${idEmpresa}/${idLocal}/${idCentroDeCusto}/${instalacao}`, {
         method: 'GET',
@@ -515,27 +609,27 @@ const ListaInventarios = () => {
               alert('Este Bem já foi inventariado!');
             }
             if (resultado[0].avlItmSit.toString() == 'S') {
-              console.log(resultado[0])
+              //console.log(resultado[0])
               navigation.navigate("inventarios", { item: resultado[0] });
             }
           }
         } else {
           setTotalReg("0")
           setDados([]);
-            adicionarNovo();
+          adicionarNovo();
 
-            //Alert.alert(
-            //"",
-            //"Número de plaqueta disponível!\n deseja utilizar?",
-            //[
-            //{
-            //text: "Não",
-            //style: "cancel"
-            //},
-            //{ text: "SIM", onPress: () => adicionarNovo() }
-            //],
-            //{ cancelable: false }
-            //);
+          //Alert.alert(
+          //"",
+          //"Número de plaqueta disponível!\n deseja utilizar?",
+          //[
+          //{
+          //text: "Não",
+          //style: "cancel"
+          //},
+          //{ text: "SIM", onPress: () => adicionarNovo() }
+          //],
+          //{ cancelable: false }
+          //);
 
         }
 
@@ -543,6 +637,7 @@ const ListaInventarios = () => {
         alert(resposta.statusText)
       }
     } catch (erro) {
+      setTotalReg("0")
       setDados([]);
       console.error('Erro ao buscar dados da API:', erro);
     } finally {
@@ -550,33 +645,13 @@ const ListaInventarios = () => {
     }
   }
 
-
-  let setFormatPlaqueta = (value: string) => {
-    let sValue = value.replace(/[^0-9]/g, '');
-    let valor = parseInt(sValue);
-    if (valor < 10) {
-      sValue = '00000' + valor.toString()
-    }
-    else if (valor < 100) {
-      sValue = '0000' + valor.toString()
-    }
-    else if (valor < 1000) {
-      sValue = '000' + valor.toString()
-    }
-    else if (valor < 10000) {
-      sValue = '00' + valor.toString()
-    }
-    else if (valor < 100000) {
-      sValue = '0' + valor.toString()
-    }
-    return sValue
-  }
-
   function redirecionaInventario() {
     router.navigate("/inventarios")
   }
 
-  function redirecionaMenu() {
+  async function redirecionaMenu() {
+    //await AsyncStorage.setItem(`filtro`, JSON.stringify(result.dados))
+
     router.navigate("/home")
     //if (Platform.OS === 'ios') {
     //router.navigate("/homeIOS")
@@ -584,6 +659,29 @@ const ListaInventarios = () => {
     // router.navigate("/homeAndroid")
     //}
   }
+
+  const setFormatPlaqueta= (value: string) => {
+    let sValue = value.replace(/[^0-9]/g, '');
+    if(value != ''){
+    let valor = parseInt(sValue);
+    if (valor < 10) {
+          sValue = '00000' + valor.toString()
+    }
+    else if (valor < 100) {
+          sValue = '0000' + valor.toString()
+    }
+    else if (valor < 1000) {
+          sValue = '000' + valor.toString()
+    }
+    else if (valor < 10000) {
+          sValue = '00' + valor.toString()
+    }
+    else if (valor < 100000) {
+          sValue = '0' + valor.toString()
+    }
+  }
+    return sValue
+}
 
   let setDropDownLocal = async (value) => {
     setCarregando(true)
@@ -599,12 +697,16 @@ const ListaInventarios = () => {
       //console.log('droplocal')
       //console.log(value)
       setLocal(value)
+      setCentroDeCusto('0')
       if (value !== null && value !== undefined && value !== '' && value !== '0') {
         await getCentroDeCusto(idEmpresa.toString(), value.toString(), instalacao, acessToken);
-        await getInventariosLocal(idEmpresa, value.toString(), instalacao, acessToken);
+
+        await buscarPlaqueta(value, '0');
+        //await getInventariosLocal(idEmpresa, value.toString(), instalacao, acessToken);
       }
       else {
-        await getInventarios(idEmpresa, instalacao, acessToken);
+        await buscarPlaqueta();
+        //await getInventarios(idEmpresa, instalacao, acessToken);
         setDadosCentroDeCusto([]);
         setLocal('0')
         setCentroDeCusto('0')
@@ -629,14 +731,18 @@ const ListaInventarios = () => {
       //console.log(value)
       setCentroDeCusto(value);
       if (value !== null && value !== undefined && value !== '' && value !== '0') {
-        await getInventariosCentroDeCusto(idEmpresa, local, value.toString(), instalacao, acessToken);
+
+        await buscarPlaqueta(local, value);
+        //await getInventariosCentroDeCusto(idEmpresa, local, value.toString(), instalacao, acessToken);
       } else {
         setDadosCentroDeCusto([]);
         if (local != '0' && local != '') {
-          await getInventariosLocal(idEmpresa, local, instalacao, acessToken);
+          await buscarPlaqueta(local, '0');
+          //await getInventariosLocal(idEmpresa, local, instalacao, acessToken);
         } else {
           setCentroDeCusto('0')
-          await getInventarios(idEmpresa, instalacao, acessToken);
+          await buscarPlaqueta();
+          //await getInventarios(idEmpresa, instalacao, acessToken);
         }
       }
     }
@@ -644,95 +750,95 @@ const ListaInventarios = () => {
   }
 
   return (
- <ScrollView>
-    <View style={styles.containerLista}>
-      <Text style={styles.titleMedioCenter}>Purple Collector - Inventários</Text>
-      <Text style={styles.titleMenor}>{empresa} - {cnpj}</Text>
+    <ScrollView>
+      <View style={styles.containerLista}>
+        <Text style={styles.titleMedioCenter}>Purple Collector - Inventários</Text>
+        <Text style={styles.titleMenor}>{empresa} - {cnpj}</Text>
 
 
-      <Text>Local</Text>
-      <View style={styles.pickerContainer}>
-        <Picker selectedValue={local} onValueChange={(value) => setDropDownLocal(value)}>
-          <Picker.Item label="SELECIONE" value={'0'}></Picker.Item>
-          {dadosLocal.map((item) => (
-            <Picker.Item key={item.locId} label={item.locCod + `-` + item.locNom} value={item.locId.toString()} />
-          ))}
-        </Picker>
-      </View>
+        <Text>Local</Text>
+        <View style={styles.pickerContainer}>
+          <Picker selectedValue={local} onValueChange={(value) => setDropDownLocal(value)}>
+            <Picker.Item label="SELECIONE" value={'0'}></Picker.Item>
+            {dadosLocal.map((item) => (
+              <Picker.Item key={item.locId} label={item.locCod + `-` + item.locNom} value={item.locId.toString()} />
+            ))}
+          </Picker>
+        </View>
 
-      <Text >Centro de custo</Text>
-      <View style={styles.pickerContainer}>
-        <Picker selectedValue={centroDeCusto} onValueChange={(value) => setDropDownCentroDeCusto(value)}>
-          <Picker.Item label="SELECIONE" value={'0'}></Picker.Item>
-          {dadosCentroDeCusto.map((item) => (
-            <Picker.Item key={item.cecId} label={item.cecCod + `-` + item.cecNom} value={item.cecId.toString()} />
-          ))}
-        </Picker>
-      </View>
+        <Text >Centro de custo</Text>
+        <View style={styles.pickerContainer}>
+          <Picker selectedValue={centroDeCusto} onValueChange={(value) => setDropDownCentroDeCusto(value)}>
+            <Picker.Item label="SELECIONE" value={'0'}></Picker.Item>
+            {dadosCentroDeCusto.map((item) => (
+              <Picker.Item key={item.cecId} label={item.cecCod + `-` + item.cecNom} value={item.cecId.toString()} />
+            ))}
+          </Picker>
+        </View>
 
-      <Text>PLAQUETA</Text>
-      <Input placeholder={'0000000'} keyboardType="numeric" value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} />
+        <Text>PLAQUETA</Text>
+        <Input placeholder={'0000000'} keyboardType="numeric" value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} />
 
-      {
-        !carregando ? (
-          <Button title="Buscar" onPress={buscarPlaqueta} />
-          
-        ):(
+        {
+          !carregando ? (
+            <Button title="Buscar" onPress={buscarPlaqueta} />
+
+          ) : (
             <ActivityIndicator color={'#6C3BAA'} size={40}></ActivityIndicator>
           )
-      }
+        }
 
-    <Button title="Voltar" onPress={redirecionaMenu} />
+        <Button title="Voltar" onPress={redirecionaMenu} />
 
-      <Text style={styles.titleMenor}>Total de Registro(s): {totalReg}</Text>
+        <Text style={styles.titleMenor}>Total de Registro(s): {totalReg}</Text>
 
-      <View style={styles.containerGrid}>
+        <View style={styles.containerGrid}>
 
-        {carregando ? (
+          {carregando ? (
             <View style={styles.containerMenu}>
-            <Text style={styles.title}>Carregando os dados...</Text>
-            <ActivityIndicator size="large" color="#6C3BAA" />
+              <Text style={styles.title}>Carregando...</Text>
+              <ActivityIndicator size="large" color="#6C3BAA" />
             </View>
-        ) : (
-          <FlatList
-            data={dados}
-            keyExtractor={(item, index) => index.toString()}
-            ListHeaderComponent={
+          ) : (
+            <FlatList
+              data={dados}
+              keyExtractor={(item, index) => index.toString()}
+              ListHeaderComponent={
 
-            <View style={[styles.row, styles.header]}>
-              <Text style={[styles.cell, styles.headerText]}>Plaqueta</Text>
-              <Text style={[styles.cell, styles.headerText]}>Item</Text>
-              <Text style={[styles.cell, styles.headerText]}>Situação</Text>
-            </View>
-            }
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.row}
-                onPress={() => navigation.navigate("inventarios", { item })}>
-                <Text style={styles.cell}>{setFormatPlaqueta(item.avlItmPlq.toString())}</Text>
-                <Text style={styles.cell}>{item.avlItmDes}</Text>
-                <Text style={styles.cell}>{item.avlItmSit == 'N' ? `Novo` : item.avlItmSit == 'S' ? `Sobra contabil` : item.avlItmSit == 'I' ? 'Inventariado' : item.avlItmSit == 'C' ? 'Concluído' : ''}</Text>
-              </TouchableOpacity>
-            )}
+                <View style={[styles.row, styles.header]}>
+                  <Text style={[styles.cell, styles.headerText]}>Plaqueta</Text>
+                  <Text style={[styles.cell, styles.headerText]}>Item</Text>
+                  <Text style={[styles.cell, styles.headerText]}>Situação</Text>
+                </View>
+              }
+              renderItem={({ item }) => (
+                <TouchableOpacity style={styles.row}
+                  onPress={() => navigation.navigate("inventarios", { item })}>
+                  <Text style={styles.cell}>{setFormatPlaqueta(item.avlItmPlq.toString())}</Text>
+                  <Text style={styles.cell}>{item.avlItmDes}</Text>
+                  <Text style={styles.cell}>{item.avlItmSit == 'N' ? `Novo` : item.avlItmSit == 'S' ? `Sobra contabil` : item.avlItmSit == 'I' ? 'Inventariado' : item.avlItmSit == 'C' ? 'Concluído' : ''}</Text>
+                </TouchableOpacity>
+              )}
 
-            scrollEnabled={false}
-            
-            ListFooterComponent={
-              carregando && (
+              scrollEnabled={false}
+
+              ListFooterComponent={
+                carregando && (
                   <ActivityIndicator size="large" color="#6C3BAA" />
                 )
-            }
+              }
 
-            ListEmptyComponent={
-              <Text style={{ textAlign: 'center', marginTop: 20, color: 'gray' }}>
-                Nenhum registro encontrado.
-              </Text>
-            }
-          />
-        )}
+              ListEmptyComponent={
+                <Text style={{ textAlign: 'center', marginTop: 20, color: 'gray' }}>
+                  Nenhum registro encontrado.
+                </Text>
+              }
+            />
+          )}
+        </View>
+
+
       </View>
-
-
-    </View>
     </ScrollView>
   );
 };

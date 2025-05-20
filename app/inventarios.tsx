@@ -21,6 +21,7 @@ const Inventarios = () => {
 
       const [carregando, setCarregando] = useState(true);
       const [pickerEnabled, setPickerEnabled] = useState(true);
+      const [pickerFalse, setpickerFalse] = useState(false);
       const [btnInventariar, setBtnInventariar] = useState(false);
 
       const [tituloPage, setTituloPage] = useState('Novo Invetário')
@@ -32,10 +33,15 @@ const Inventarios = () => {
 
       const [empresa, setEmpresa] = useState('')
       const [local, setLocal] = useState('')
+      const [localOriginal, setLocalOriginal] = useState('')
       const [centroDeCusto, setCentroDeCusto] = useState('')
+      const [centroDeCustoOriginal, setCentroDeCustoOriginal] = useState('')
       const [plaqueta, setPlaqueta] = useState('')
+      const [plaquetaOriginal, setPlaquetaOriginal] = useState('')
       const [plaquetaAnt, setPlaquetaAnt] = useState('')
-      const [quantidade, setQuantidade] = useState('')
+      const [quantidade, setQuantidade] = useState('1')
+      const [quantidadeEditavel, setQuantidadeEditavel] = useState(false);
+
       const [setor, setSetor] = useState('')
       const [items, setItems] = useState('')
       const [descricao, setDescricao] = useState('')
@@ -45,6 +51,8 @@ const Inventarios = () => {
       const [andar, setAndar] = useState('')
       const [situacao, setSituacao] = useState('')
       const [status, setStatus] = useState('')
+      const [plaquetaDisponivel, setPlaquetaDisponivel] = useState(false)
+      const [plaquetaEmUso, setPlaquetaEmUso] = useState('')
 
       const [urlFuncao, seturlFuncao] = useState('')
 
@@ -88,14 +96,17 @@ const Inventarios = () => {
                               console.log('empresa: ' + item.avlItmEpsId.toString())
                               //setDadosEmpresa(item.avlItmEpsId.toString())
                               setPickerEnabled(false)
+                              setpickerFalse(true)
 
                               setLocal(item.avlItmLocId.toString())
+                              setLocalOriginal(item.avlItmLocId.toString())
                               console.log('local: ' + item.avlItmLocId.toString())
                               //setDadosLocal(item.avlItmLocId.toString())
                               //console.log('id empresa')
                               //console.log(item.avlItmEpsId.toString())
                               await getCentroDeCusto(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), instalacao, acessToken);
                               setCentroDeCusto(item.avlItmCecId.toString())
+                              setCentroDeCustoOriginal(item.avlItmCecId.toString())
                               console.log('centro de custo: ' + item.avlItmCecId.toString())
 
                               await getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
@@ -105,10 +116,11 @@ const Inventarios = () => {
 
                               console.log('plaquetaAnt sem formato: ' + item.avlItmPlqAnt)
                               setPlaqueta(setFormatPlaqueta(item.avlItmPlq.toString()))
-
+                              setPlaquetaOriginal(setFormatPlaqueta(item.avlItmPlq.toString()))
 
                               if (item.avlItmPlqAnt != '') {
                                     setPlaquetaAnt(item.avlItmPlqAnt)
+
                               } else {
                                     setPlaquetaAnt(item.avlItmPlq.toString())
                               }
@@ -118,6 +130,8 @@ const Inventarios = () => {
                               await getItems(instalacao, acessToken)
                               setItems(item.avlItmDes.toString())
                               console.log('item: ' + item.avlItmDes.toString())
+
+                              setQuantidadeEditavel(false);
 
                               setDescricao(item.avlItmDes.toString())
                               console.log('descrcao: ' + item.avlItmDes.toString())
@@ -151,6 +165,7 @@ const Inventarios = () => {
                               setEmpresa(item.avlItmEpsId.toString())
                               //setDadosEmpresa(item.avlItmEpsId.toString())
                               setPickerEnabled(false)
+                              setpickerFalse(false)
 
                               setLocal(item.avlItmLocId.toString())
                               console.log('local: ' + item.avlItmLocId.toString())
@@ -161,8 +176,8 @@ const Inventarios = () => {
                               setCentroDeCusto(item.avlItmCecId.toString())
                               console.log('centro de custo: ' + item.avlItmCecId.toString())
 
-                              //await getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
-                              
+                              await getSetor(item.avlItmEpsId.toString(), item.avlItmLocId.toString(), item.avlItmCecId.toString(), instalacao, acessToken)
+
                               //setSetor(item.avlItmSetId.toString())
                               //console.log('setor: ' + item.avlItmSetId.toString())
 
@@ -172,6 +187,9 @@ const Inventarios = () => {
                               } else {
                                     setPlaquetaAnt(item.avlItmPlq.toString())
                               }
+
+                              setQuantidadeEditavel(true);
+
                               await getItems(instalacao, acessToken)
 
                               setSituacao('N')
@@ -195,13 +213,13 @@ const Inventarios = () => {
 
       const isEmpty = (value) => {
             return (
-              value === undefined ||
-              value === null ||
-              (typeof value === "string" && value.trim() === "") ||
-              (Array.isArray(value) && value.length === 0) ||
-              (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0)
+                  value === undefined ||
+                  value === null ||
+                  (typeof value === "string" && value.trim() === "") ||
+                  (Array.isArray(value) && value.length === 0) ||
+                  (typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0)
             );
-          };
+      };
 
 
       let validaSessao = async () => {
@@ -408,7 +426,7 @@ const Inventarios = () => {
             setDescricao(value);
       }
 
-      let setFormatPlaqueta = (value: string) => {
+      const setFormatPlaqueta = (value: string) => {
             let sValue = value.replace(/[^0-9]/g, '');
             let valor = parseInt(sValue);
             if (valor < 10) {
@@ -427,6 +445,70 @@ const Inventarios = () => {
                   sValue = '0' + valor.toString()
             }
             return sValue
+      }
+
+      let getPlaquetaPorLocal = async (plaqueta: any, idEmpresa: any, idLocal: any, instalacao: any, acessToken: any) => {
+            try {
+                  const resposta = await fetch(`${urlApi}/Inventario/BuscarPlaquetaPorLocal/${plaqueta}/${idEmpresa}/${idLocal}/${instalacao}`, {
+                        method: 'GET',
+                        headers: {
+                              Authorization: `Bearer ${acessToken}`,
+                              'Content-Type': `application/json`
+                        }
+                  })
+
+                  if (resposta.ok) {
+                        const json = await resposta.json();
+
+                        if (json.status) {
+                              return false;
+                        } else {
+                              return false;
+                        }
+                  } else {
+                        alert(resposta.statusText)
+                        return false;
+                  }
+            } catch (erro) {
+                  console.error('Erro ao buscar dados da API:', erro);
+            }
+      }
+
+      let getPlaquetaPorCentroDeCusto = async (plaqueta: any, idEmpresa: any, idLocal: any, idCentroDeCusto: any, instalacao: any, acessToken: any) => {
+            try {
+
+                  const resposta = await fetch(`${urlApi}/Inventario/BuscarPlaquetaPorCentroDeCusto/${plaqueta}/${idEmpresa}/${idLocal}/${idCentroDeCusto}/${instalacao}`, {
+                        method: 'GET',
+                        headers: {
+                              Authorization: `Bearer ${acessToken}`,
+                              'Content-Type': `application/json`
+                        }
+                  })
+
+                  if (resposta.ok) {
+                        const json = await resposta.json();
+                        //console.log(json)
+                        if (json.status) {
+                              //const resultado = json.dados;
+                              //console.log(`json chegou`)
+                              //setDados(resultado); // limita a 20 registros
+                              //setTotalReg(resultado.length)
+                              //console.log(`plaqueta retorno`)
+                              //console.log(resultado.avlItmPlq)
+                              //setPlaquetaEmUso(setFormatPlaqueta(resultado.avlItmPlq.toString()))
+                              return false;
+                        } else {
+                              return true;
+                        }
+                  } else {
+                        return false;
+                        alert(resposta.statusText)
+                  }
+            } catch (erro) {
+                  //setTotalReg("0")
+                  //setDados([]);
+                  console.error('Erro ao buscar dados da API:', erro);
+            }
       }
 
       let Salvar = async () => {
@@ -449,6 +531,9 @@ const Inventarios = () => {
                   else if (plaqueta == '') {
                         alert('Digite uma plaqueta.')
                   }
+                  else if (quantidade == '' && parseInt(quantidade) == 0) {
+                        alert('Informe a quantidade do item.')
+                  }
                   else if (setor == '') {
                         alert('Selecione um Setor.')
                   }
@@ -460,6 +545,8 @@ const Inventarios = () => {
                   }
                   else if (situacao == '') {
                         alert('Selecione uma situacao.')
+                  } else if (parseInt(quantidade) > 100) {
+                        alert('Limite de quantidade máxima de 100 items.')
                   } else {
 
                         //console.log(response.instalacao);
@@ -472,6 +559,8 @@ const Inventarios = () => {
                         const idUser = response.idUser
 
                         try {
+                              console.log(`idInventario: ${idInventario}`)
+
                               if (idInventario != '') {
                                     console.log('executar edicao')
 
@@ -480,102 +569,189 @@ const Inventarios = () => {
                                     if (situacao.toString() == 'S') {
                                           novaSituacao = 'I'
                                     }
+                                    let validado = true;
+                                    let mensagemErro = '';
+                                    if (centroDeCusto != centroDeCustoOriginal) {
+                                          let result = await getPlaquetaPorCentroDeCusto(plaqueta.toString(), idEmpresa, local, centroDeCusto, instalacao, acessToken);
+                                          if (result === true) {
+                                                console.log(`Plaqueta disponível: ${setFormatPlaqueta(plaqueta.toString())}`)
 
-                                    const resposta = await fetch(`${urlApi}/Inventario/Atualizar`, {
-                                          method: 'PUT',
-                                          body: JSON.stringify({
-                                                'avlItmId': idInventario,
-                                                'avlItmEpsId': empresa.toString(),
-                                                'avlItmLocId': local.toString(),
-                                                'avlItmCecId': centroDeCusto.toString(),
-                                                'avlItmSetId': setor.toString(),
-                                                'avlItmPlq': plaqueta.toString(),
-                                                'avlItmPlqAnt': plaqueta.toString(),
-                                                'avlItmDes': descricao.toString(),
-                                                'avlItmComp': complemento.toString(),
-                                                'avlItmNumSer': numeroDeSerie.toString(),
-                                                'avlItmCon': conservacao.toString(),
-                                                'avlItmAnd': andar.toString(),
-                                                'avlItmSit': novaSituacao.toString(),
-                                                'avlItmVlrAqs': '0',
-                                                'avlItmSts': status.toString(),
-                                                'avlItmUsrIncId': idUser.toString(),
-                                                'avlItmUsrAltId': idUser.toString(),
-                                                'avlItmIstId': instalacao.toString(),
-                                          }),
-                                          headers: {
-                                                Authorization: `Bearer ${acessToken}`,
-                                                'Content-Type': `application/json`
-                                          }
-                                    })
-
-                                    console.log(resposta)
-                                    if (resposta.status) {
-                                          if (resposta.ok) {
-                                                const json = await resposta.json();
-                                                alert('Registro salvo com sucesso!');
-                                                router.navigate('/listaInventarios')
                                           } else {
-                                                console.log(resposta.status)
-                                                throw new Error(`Erro ao atualizar: ${resposta.status}`);
+                                                validado = false;
+                                                mensagemErro = `Plaqueta: ${setFormatPlaqueta(plaqueta.toString())} indisponível para este Centro de Custo escolhido.`;
                                           }
-                                    } else {
-                                          console.log(resposta.status)
-                                          throw new Error(`Erro ao atualizar: ${resposta}`);
                                     }
-                              } else {
-                                    console.log('executar adicao')
-                                    console.log(acessToken)
-                                    console.log(instalacao)
-                                    console.log(empresa)
-                                    const resposta = await fetch(`${urlApi}/Inventario/Adicionar`, {
-                                          method: 'POST',
-                                          body: JSON.stringify({
-                                                'avlItmId': 0,
-                                                'avlItmEpsId': empresa.toString(),
-                                                'avlItmLocId': local.toString(),
-                                                'avlItmCecId': centroDeCusto.toString(),
-                                                'avlItmSetId': setor.toString(),
-                                                'avlItmPlq': plaqueta.toString(),
-                                                'avlItmPlqAnt': plaqueta.toString(),
-                                                'avlItmDes': descricao.toString(),
-                                                'avlItmComp': complemento.toString(),
-                                                'avlItmNumSer': numeroDeSerie.toString(),
-                                                'avlItmCon': conservacao.toString(),
-                                                'avlItmAnd': andar.toString(),
-                                                'avlItmSit': situacao.toString(),
-                                                'avlItmVlrAqs': 0,
-                                                'avlItmSts': 1,
-                                                'avlItmUsrIncId': idUser.toString(),
-                                                'avlItmUsrAltId': idUser.toString(),
-                                                'avlItmIstId': instalacao.toString(),
-                                          }),
-                                          headers: {
-                                                Authorization: `Bearer ${acessToken}`,
-                                                'Content-Type': `application/json`
-                                          }
-                                    })
+                                    else if (local != localOriginal) {
+                                          let result = await getPlaquetaPorCentroDeCusto(plaqueta.toString(), idEmpresa, local, centroDeCusto, instalacao, acessToken);
+                                          if (result === true) {
+                                                console.log(`Plaqueta disponível: ${setFormatPlaqueta(plaqueta.toString())}`)
 
-                                    console.log(resposta)
-                                    console.log(resposta.status)
-                                    console.log(resposta.ok)
-                                    if (resposta.status) {
-                                          if (resposta.ok) {
-                                                const json = await resposta.json();
-                                                console.log(json.mensagem)
-                                                if (json.status) {
-                                                      alert('Registro Incluído com sucesso!');
+                                          } else {
+                                                validado = false;
+                                                mensagemErro = `Plaqueta: ${setFormatPlaqueta(plaqueta.toString())} indisponível para este Local escolhido.`;
+                                          }
+                                    }
+                                    else if (plaqueta != plaquetaOriginal) {
+                                          let result = await getPlaquetaPorCentroDeCusto(plaqueta.toString(), idEmpresa, local, centroDeCusto, instalacao, acessToken);
+                                          if (result === true) {
+                                                console.log(`Plaqueta disponível: ${setFormatPlaqueta(plaqueta.toString())}`)
+
+                                          } else {
+                                                validado = false;
+                                                mensagemErro = `Esta Plaqueta: ${setFormatPlaqueta(plaqueta.toString())} está indisponível para este Local e Centro de custo.`;
+                                          }
+                                    }
+
+                                    if (validado) {
+                                          const resposta = await fetch(`${urlApi}/Inventario/Atualizar`, {
+                                                method: 'PUT',
+                                                body: JSON.stringify({
+                                                      'avlItmId': idInventario,
+                                                      'avlItmEpsId': empresa.toString(),
+                                                      'avlItmLocId': local.toString(),
+                                                      'avlItmCecId': centroDeCusto.toString(),
+                                                      'avlItmSetId': setor.toString(),
+                                                      'avlItmPlq': plaqueta.toString(),
+                                                      'avlItmPlqAnt': plaquetaOriginal.toString(),
+                                                      'avlItmDes': descricao.toString(),
+                                                      'avlItmComp': complemento.toString(),
+                                                      'avlItmNumSer': numeroDeSerie.toString(),
+                                                      'avlItmCon': conservacao.toString(),
+                                                      'avlItmAnd': andar.toString(),
+                                                      'avlItmSit': novaSituacao.toString(),
+                                                      'avlItmVlrAqs': '0',
+                                                      'avlItmSts': status.toString(),
+                                                      'avlItmUsrIncId': idUser.toString(),
+                                                      'avlItmUsrAltId': idUser.toString(),
+                                                      'avlItmIstId': instalacao.toString(),
+                                                }),
+                                                headers: {
+                                                      Authorization: `Bearer ${acessToken}`,
+                                                      'Content-Type': `application/json`
+                                                }
+                                          })
+
+                                          console.log(resposta)
+                                          if (resposta.status) {
+                                                if (resposta.ok) {
+                                                      const json = await resposta.json();
+                                                      alert('Registro salvo com sucesso!');
                                                       router.navigate('/listaInventarios')
                                                 } else {
-                                                      alert(json.mensagem);
+                                                      console.log(resposta.status)
+                                                      throw new Error(`Erro ao atualizar: ${resposta.status}`);
                                                 }
                                           } else {
-                                                console.log(resposta)
-                                                throw new Error(`Erro ao incluir: ${resposta.status}`);
+                                                console.log(resposta.status)
+                                                throw new Error(`Erro ao atualizar: ${resposta}`);
                                           }
                                     } else {
-                                          console.log(resposta.status)
-                                          throw new Error(`Erro ao incluir: ${resposta}`);
+                                          console.log(mensagemErro);
+                                          alert(mensagemErro);
+                                    }
+
+                              } else {
+                                    console.log('executar adição')
+
+                                    let validado = true;
+                                    let contador = 0;
+                                    let plaquetaLoop = parseInt(plaqueta);
+                                    let mensagemErro = ''
+                                    console.log(`iniciando plaquetaLoop: ${plaquetaLoop}`)
+                                    console.log(`validar plaquetas: ${contador} de ${quantidade}`)
+                                    if (parseInt(quantidade) > 1) {
+                                          while (contador < parseInt(quantidade)) {
+                                                let result = await getPlaquetaPorCentroDeCusto(plaquetaLoop.toString(), idEmpresa, local, centroDeCusto, instalacao, acessToken);
+                                                if (result === true) {
+                                                      console.log(`Plaqueta disponível: ${setFormatPlaqueta(plaquetaLoop.toString())} - ${contador} de ${quantidade}`)
+                                                      contador++;
+                                                      plaquetaLoop++;
+                                                } else {
+                                                      mensagemErro = `A Plaqueta: ${setFormatPlaqueta(plaquetaLoop.toString())} está indisponível, verifique a plaqueta inicial e quantidade.`;
+                                                      validado = false;
+                                                      break;
+                                                }
+                                          }
+                                    } else {
+                                          validado = true;
+                                    }
+
+                                    if (validado) {
+                                          contador = 0;
+                                          plaquetaLoop = parseInt(plaqueta);
+
+                                          while (contador < parseInt(quantidade)) {
+
+                                                console.log('executar adicao')
+                                                console.log(acessToken)
+                                                console.log(instalacao)
+                                                console.log(empresa)
+                                                const resposta = await fetch(`${urlApi}/Inventario/Adicionar`, {
+                                                      method: 'POST',
+                                                      body: JSON.stringify({
+                                                            'avlItmId': 0,
+                                                            'avlItmEpsId': empresa.toString(),
+                                                            'avlItmLocId': local.toString(),
+                                                            'avlItmCecId': centroDeCusto.toString(),
+                                                            'avlItmSetId': setor.toString(),
+                                                            'avlItmPlq': plaquetaLoop.toString(),
+                                                            'avlItmPlqAnt': plaquetaLoop.toString(),
+                                                            'avlItmDes': descricao.toString(),
+                                                            'avlItmComp': complemento.toString(),
+                                                            'avlItmNumSer': numeroDeSerie.toString(),
+                                                            'avlItmCon': conservacao.toString(),
+                                                            'avlItmAnd': andar.toString(),
+                                                            'avlItmSit': situacao.toString(),
+                                                            'avlItmVlrAqs': 0,
+                                                            'avlItmSts': 1,
+                                                            'avlItmUsrIncId': idUser.toString(),
+                                                            'avlItmUsrAltId': idUser.toString(),
+                                                            'avlItmIstId': instalacao.toString(),
+                                                      }),
+                                                      headers: {
+                                                            Authorization: `Bearer ${acessToken}`,
+                                                            'Content-Type': `application/json`
+                                                      }
+                                                })
+
+                                                console.log(resposta)
+                                                console.log(resposta.status)
+                                                console.log(resposta.ok)
+                                                if (resposta.status) {
+                                                      if (resposta.ok) {
+                                                            const json = await resposta.json();
+                                                            console.log(json.mensagem)
+                                                            if (json.status) {
+                                                                  console.log(`Plaqueta Cadastrada: ${setFormatPlaqueta(plaquetaLoop.toString())} - ${contador} de ${quantidade}`)
+                                                                  contador++;
+                                                                  plaquetaLoop++;
+
+                                                            } else {
+                                                                  alert(json.mensagem);
+                                                            }
+                                                      } else {
+                                                            console.log(resposta)
+                                                            throw new Error(`Erro ao incluir: ${resposta.status}`);
+                                                      }
+                                                } else {
+                                                      console.log(resposta.status)
+                                                      throw new Error(`Erro ao incluir: ${resposta}`);
+                                                }
+                                          }
+
+                                          console.log(`Resultado final: contador: ${contador} e quantidade: ${quantidade}`)
+                                          if (contador === parseInt(quantidade)) {
+                                                if (contador > 1) {
+                                                      alert('Registro(s) Incluído(s) com sucesso!');
+                                                } else {
+                                                      alert('Registro Incluído com sucesso!');
+                                                }
+                                                router.navigate('/listaInventarios')
+                                          }
+
+                                    } else {
+                                          console.log(mensagemErro);
+                                          alert(mensagemErro);
                                     }
                               }
 
@@ -590,123 +766,124 @@ const Inventarios = () => {
       }
 
       return (
-      <SafeAreaView style={{ flex: 1 }}>
-
-
-            {carregando ? (
-                  <View style={styles.containerMenu}>
-                  <Text style={styles.title}>Carregando os dados...</Text>
-                  <ActivityIndicator size="large" color="#6C3BAA" />
-                  </View>
-            ) : (
-            <ScrollView>
-                  <View style={styles.containerMenu}>
-                        <Text style={styles.title}>Purple Collector</Text>
-                        <Text style={styles.titlePequeno}> {tituloPage}
-                        </Text>
-
-                        <Text>EMPRESA</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={empresa} onValueChange={(value) => setEmpresa(value)} enabled={pickerEnabled}>
-                                    <Picker.Item label="SELECIONE" value={''}></Picker.Item>
-                                    {dadosEmpresa.map((item) => (
-                                          <Picker.Item key={item.epsId} label={item.epsNomFnt + `-` + item.epsCnpj} value={item.epsId.toString()} />
-                                    ))}
-                              </Picker>
+            <SafeAreaView style={{ flex: 1 }}>
+                  {carregando ? (
+                        <View style={styles.containerMenu}>
+                              <Text style={styles.title}>Carregando os dados...</Text>
+                              <ActivityIndicator size="large" color="#6C3BAA" />
                         </View>
-                        <Text>LOCAL</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={local} onValueChange={(value) => setDropDownLocal(value)}>
-                                    <Picker.Item label="SELECIONE" value={``}></Picker.Item>
-                                    {dadosLocal.map((item) => (
-                                          <Picker.Item key={item.locId} label={item.locCod + `-` + item.locNom} value={item.locId.toString()} />
-                                    ))}
-                              </Picker>
-                        </View>
-                        <Text>CENTRO DE CUSTO</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={centroDeCusto} onValueChange={(value) => setDropDownCentroDeCusto(value)}>
-                                    <Picker.Item label="SELECIONE" value={``}></Picker.Item>
-                                    {dadosCentroDeCusto.map((item) => (
-                                          <Picker.Item key={item.cecId} label={item.cecCod + `-` + item.cecNom} value={item.cecId.toString()} />
-                                    ))}
-                              </Picker>
-                        </View>
+                  ) : (
+                        <ScrollView>
+                              <View style={styles.containerMenu}>
+                                    <Text style={styles.title}>Purple Collector</Text>
+                                    <Text style={styles.titlePequeno}> {tituloPage}
+                                    </Text>
 
-                        <Text>PLAQUETA</Text>
-                        <Input value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} placeholder={'000000'} />
+                                    <Text>EMPRESA</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={empresa} onValueChange={(value) => setEmpresa(value)} enabled={pickerEnabled}>
+                                                <Picker.Item label="SELECIONE" value={''}></Picker.Item>
+                                                {dadosEmpresa.map((item) => (
+                                                      <Picker.Item key={item.epsId} label={item.epsNomFnt + `-` + item.epsCnpj} value={item.epsId.toString()} />
+                                                ))}
+                                          </Picker>
+                                    </View>
+                                    <Text>LOCAL</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={local} onValueChange={(value) => setDropDownLocal(value)} enabled={pickerFalse}>
+                                                <Picker.Item label="SELECIONE" value={``}></Picker.Item>
+                                                {dadosLocal.map((item) => (
+                                                      <Picker.Item key={item.locId} label={item.locCod + `-` + item.locNom} value={item.locId.toString()} />
+                                                ))}
+                                          </Picker>
+                                    </View>
+                                    <Text>CENTRO DE CUSTO</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={centroDeCusto} onValueChange={(value) => setDropDownCentroDeCusto(value)} enabled={pickerFalse}>
+                                                <Picker.Item label="SELECIONE" value={``}></Picker.Item>
+                                                {dadosCentroDeCusto.map((item) => (
+                                                      <Picker.Item key={item.cecId} label={item.cecCod + `-` + item.cecNom} value={item.cecId.toString()} />
+                                                ))}
+                                          </Picker>
+                                    </View>
 
-                        <Text>NOVA PLAQUETA</Text>
-                        <Input value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} placeholder={'000000'} />
+                                    <Text>PLAQUETA</Text>
+                                    <Input value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} placeholder={'000000'} editable={pickerEnabled} />
 
-                        <Text>SETOR</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={setor} onValueChange={(value) => setSetor(value)}>
-                                    <Picker.Item label="SELECIONE" value={``}></Picker.Item>
-                                    {dadosSetor.map((item) => (
-                                          <Picker.Item key={item.setId} label={item.setCod + `-` + item.setNom} value={item.setId.toString()} />
-                                    ))}
-                              </Picker>
-                        </View>
-                        <Text>ITEM</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={items} onValueChange={(value) => setDropDownItem(value)}>
-                                    <Picker.Item label="SELECIONE" value={``}></Picker.Item>
-                                    {dadosItems.map((item) => (
-                                          <Picker.Item key={item.itmNom} label={item.itmNom} value={item.itmNom.toString()} />
-                                    ))}
-                              </Picker>
-                        </View>
-                        <Text>DESCRIÇÃO</Text>
-                        <Input value={descricao} maxLength={200} onChangeText={(value) => setDescricao(value)} placeholder={'DIGITE'} />
-                        <Text>COMPLEMENTO</Text>
-                        <Input value={complemento} onChangeText={(value) => setComplemento(value)} placeholder={'DIGITE'} />
-                        <Text>NÚMERO DE SÉRIE</Text>
-                        <Input value={numeroDeSerie} onChangeText={(value) => setNumeroDeSerie(value)} placeholder={'DIGITE'} />
-                        <Text>NOTA DE CONSERVAÇÃO</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={conservacao} onValueChange={(value) => setConservacao(value)}>
-                                    <Picker.Item label="SELECIONE" value={``}></Picker.Item>
-                                    <Picker.Item label="NOTA 1" value={`1`}></Picker.Item>
-                                    <Picker.Item label="NOTA 2" value={`2`}></Picker.Item>
-                                    <Picker.Item label="NOTA 3" value={`3`}></Picker.Item>
-                                    <Picker.Item label="NOTA 4" value={`4`}></Picker.Item>
-                                    <Picker.Item label="NOTA 5" value={`5`}></Picker.Item>
-                                    <Picker.Item label="NOTA 6" value={`6`}></Picker.Item>
-                                    <Picker.Item label="NOTA 7" value={`7`}></Picker.Item>
-                                    <Picker.Item label="NOTA 8" value={`8`}></Picker.Item>
-                                    <Picker.Item label="NOTA 9" value={`9`}></Picker.Item>
-                                    <Picker.Item label="NOTA 10" value={`10`}></Picker.Item>
-                              </Picker>
-                        </View>
-                        <Text>ANDAR</Text>
-                        <Input value={andar} onChangeText={(value) => setAndar(value)} placeholder={'DIGITE'} />
-                        <Text>SITUAÇÃO</Text>
-                        <View style={styles.pickerContainer}>
-                              <Picker selectedValue={situacao} onValueChange={(value) => setSituacao(value)} enabled={pickerEnabled}>
-                                    <Picker.Item label="SELECIONE" value={``}></Picker.Item>
-                                    <Picker.Item label="NOVO" value={`N`}></Picker.Item>
-                                    <Picker.Item label="SOBRA CONTÁBIL" value={`S`}></Picker.Item>
-                                    <Picker.Item label="INVENTARIADO" value={`I`}></Picker.Item>
-                                    <Picker.Item label="CONCLUÍDO" value={`C`}></Picker.Item>
-                              </Picker>
-                        </View>
+                                    <Text>QUANTIDADE DO ITEM</Text>
+                                    <Input value={quantidade} maxLength={200} keyboardType="numeric" onChangeText={(value) => setQuantidade(value)} editable={quantidadeEditavel} placeholder={'DIGITE'} />
 
-                        {
-                              !carregando ? (
-                                    <Button title={btnInventariar ? 'Inventariar' : 'Salvar'} onPress={Salvar} />
-                              ) :
-                                    (
-                                          <ActivityIndicator color={'#6C3BAA'} size={40}></ActivityIndicator>
-                                    )
-                        }
+                                    <Text>NOVA PLAQUETA</Text>
+                                    <Input value={plaqueta} maxLength={6} onChangeText={(value) => setPlaqueta(value)} placeholder={'000000'} editable={pickerFalse} />
 
-                        <Button title="Voltar" onPress={() => router.navigate('/listaInventarios')} />
-                  </View>
-            </ScrollView>
-            )}
+                                    <Text>SETOR</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={setor} onValueChange={(value) => setSetor(value)}>
+                                                <Picker.Item label="SELECIONE" value={``}></Picker.Item>
+                                                {dadosSetor.map((item) => (
+                                                      <Picker.Item key={item.setId} label={item.setCod + `-` + item.setNom} value={item.setId.toString()} />
+                                                ))}
+                                          </Picker>
+                                    </View>
+                                    <Text>ITEM</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={items} onValueChange={(value) => setDropDownItem(value)}>
+                                                <Picker.Item label="SELECIONE" value={``}></Picker.Item>
+                                                {dadosItems.map((item) => (
+                                                      <Picker.Item key={item.itmNom} label={item.itmNom} value={item.itmNom.toString()} />
+                                                ))}
+                                          </Picker>
+                                    </View>
+                                    <Text>DESCRIÇÃO do Item</Text>
+                                    <Input value={descricao} maxLength={200} onChangeText={(value) => setDescricao(value)} placeholder={'DIGITE'} />
+                                    <Text>COMPLEMENTO</Text>
+                                    <Input value={complemento} onChangeText={(value) => setComplemento(value)} placeholder={'DIGITE'} />
+                                    <Text>NÚMERO DE SÉRIE</Text>
+                                    <Input value={numeroDeSerie} onChangeText={(value) => setNumeroDeSerie(value)} placeholder={'DIGITE'} />
+                                    <Text>NOTA DE CONSERVAÇÃO</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={conservacao} onValueChange={(value) => setConservacao(value)}>
+                                                <Picker.Item label="SELECIONE" value={``}></Picker.Item>
+                                                <Picker.Item label="NOTA 1" value={`1`}></Picker.Item>
+                                                <Picker.Item label="NOTA 2" value={`2`}></Picker.Item>
+                                                <Picker.Item label="NOTA 3" value={`3`}></Picker.Item>
+                                                <Picker.Item label="NOTA 4" value={`4`}></Picker.Item>
+                                                <Picker.Item label="NOTA 5" value={`5`}></Picker.Item>
+                                                <Picker.Item label="NOTA 6" value={`6`}></Picker.Item>
+                                                <Picker.Item label="NOTA 7" value={`7`}></Picker.Item>
+                                                <Picker.Item label="NOTA 8" value={`8`}></Picker.Item>
+                                                <Picker.Item label="NOTA 9" value={`9`}></Picker.Item>
+                                                <Picker.Item label="NOTA 10" value={`10`}></Picker.Item>
+                                          </Picker>
+                                    </View>
+                                    <Text>ANDAR</Text>
+                                    <Input value={andar} onChangeText={(value) => setAndar(value)} placeholder={'DIGITE'} />
+                                    <Text>SITUAÇÃO</Text>
+                                    <View style={styles.pickerContainer}>
+                                          <Picker selectedValue={situacao} onValueChange={(value) => setSituacao(value)} enabled={pickerEnabled}>
+                                                <Picker.Item label="SELECIONE" value={``}></Picker.Item>
+                                                <Picker.Item label="NOVO" value={`N`}></Picker.Item>
+                                                <Picker.Item label="SOBRA CONTÁBIL" value={`S`}></Picker.Item>
+                                                <Picker.Item label="INVENTARIADO" value={`I`}></Picker.Item>
+                                                <Picker.Item label="CONCLUÍDO" value={`C`}></Picker.Item>
+                                          </Picker>
+                                    </View>
 
-      </SafeAreaView>
+                                    {
+                                          !carregando ? (
+                                                <Button title={btnInventariar ? 'Inventariar' : 'Salvar'} onPress={Salvar} />
+                                          ) :
+                                                (
+                                                      <ActivityIndicator color={'#6C3BAA'} size={40}></ActivityIndicator>
+                                                )
+                                    }
+
+                                    <Button title="Voltar" onPress={() => router.navigate('/listaInventarios')} />
+                              </View>
+                        </ScrollView>
+                  )}
+
+            </SafeAreaView>
       )
 };
 
